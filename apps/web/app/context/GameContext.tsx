@@ -30,14 +30,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     settings: DEFAULT_SETTINGS,
     revealedLetters: new Map(),
   });
-
-  // Initialize game on mount
-  useEffect(() => {
-    startNewGame();
-  }, []);
+  const [initialized, setInitialized] = useState(false);
 
   const startNewGame = useCallback(async () => {
-    const solution = await getRandomSolution(gameState.settings.wordLength || 5);
+    const wordLength = gameState.settings.wordLength || 5;
+    const solution = await getRandomSolution(wordLength);
     
     setGameState(prev => ({
       ...prev,
@@ -48,6 +45,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       revealedLetters: new Map(),
     }));
   }, [gameState.settings.wordLength]);
+
+  // Initialize game on mount
+  useEffect(() => {
+    if (!initialized) {
+      startNewGame();
+      setInitialized(true);
+    }
+  }, [initialized, startNewGame]);
 
   const updateSettings = useCallback((newSettings: Partial<GameSettings>) => {
     setGameState(prev => ({
