@@ -99,7 +99,7 @@ export async function getRandomSolution(wordLength: number): Promise<string> {
     const fallbacks: Record<number, string> = {
       5: 'omena',
       6: 'ajatus',
-      7: 'ajatus',
+      7: 'ihminen',
     };
     return fallbacks[wordLength] || 'omena';
   }
