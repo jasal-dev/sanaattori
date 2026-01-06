@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import SettingsModal from './SettingsModal';
+import StatsModal from './StatsModal';
 
 export default function Header() {
   const [showSettings, setShowSettings] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   return (
     <>
@@ -40,6 +42,7 @@ export default function Header() {
               </svg>
             </button>
             <button
+              onClick={() => setShowStats(true)}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
               aria-label="Statistics"
             >
@@ -63,6 +66,7 @@ export default function Header() {
       </header>
       
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <StatsModal isOpen={showStats} onClose={() => setShowStats(false)} />
     </>
   );
 }

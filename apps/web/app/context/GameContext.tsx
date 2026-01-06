@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { type GameState, type GameSettings, type Guess, type LetterState } from '../types/game';
 import { evaluateGuess, updateRevealedLetters, getRandomSolution } from '../utils/evaluation';
+import { updateStatsAfterGame } from '../utils/stats';
 
 interface GameContextType {
   gameState: GameState;
@@ -110,6 +111,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const won = currentGuess.toLowerCase() === solution.toLowerCase();
     const newGuesses = [...guesses, newGuess];
     const lost = !won && newGuesses.length >= settings.maxAttempts;
+    
+    // Update stats if game ended
+    if (won || lost) {
+      updateStatsAfterGame(won);
+    }
     
     setGameState(prev => ({
       ...prev,
