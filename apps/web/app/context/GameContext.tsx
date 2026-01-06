@@ -5,6 +5,7 @@ import { type GameState, type GameSettings, type Guess, type LetterState } from 
 import { evaluateGuess, updateRevealedLetters, getRandomSolution } from '../utils/evaluation';
 import { updateStatsAfterGame } from '../utils/stats';
 import { getHardModeConstraints, validateHardMode } from '../utils/hardMode';
+import { validateGuess as apiValidateGuess } from '../utils/api';
 
 interface GameContextType {
   gameState: GameState;
@@ -114,6 +115,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setHardModeError(error);
         return; // Don't submit if hard mode violation
       }
+    }
+    
+    // API validation - check if the guess is a valid word
+    const isValidWord = await apiValidateGuess(currentGuess, settings.wordLength);
+    if (!isValidWord) {
+      setHardModeError('Not in word list');
+      return; // Don't submit if not a valid word
     }
     
     // Evaluate the guess
