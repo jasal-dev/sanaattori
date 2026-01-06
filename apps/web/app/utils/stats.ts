@@ -69,7 +69,7 @@ export function updateStatsAfterGame(won: boolean): GameStats {
 }
 
 export function resetStats(): GameStats {
-  const stats = DEFAULT_STATS;
+  const stats = { ...DEFAULT_STATS };
   saveStats(stats);
   return stats;
 }

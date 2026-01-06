@@ -76,7 +76,10 @@ export function validateHardMode(guess: string, constraints: HardModeConstraint[
   for (const constraint of constraints) {
     // Check if letter must be included
     if (constraint.mustInclude) {
-      const count = guessLower.split(constraint.letter).length - 1;
+      let count = 0;
+      for (const char of guessLower) {
+        if (char === constraint.letter) count++;
+      }
       if (count === 0) {
         return `Must include "${constraint.letter.toUpperCase()}"`;
       }

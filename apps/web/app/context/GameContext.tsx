@@ -61,7 +61,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       startNewGame();
       setInitialized(true);
     }
-  }, [initialized, startNewGame]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialized]);
 
   const updateSettings = useCallback((newSettings: Partial<GameSettings>) => {
     setGameState(prev => ({

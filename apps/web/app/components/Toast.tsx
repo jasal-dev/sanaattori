@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+const FADE_OUT_DURATION = 300; // milliseconds
+
 interface ToastProps {
   message: string;
   onClose: () => void;
@@ -14,7 +16,7 @@ export default function Toast({ message, onClose, duration = 2000 }: ToastProps)
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(onClose, 300); // Wait for fade out animation
+      setTimeout(onClose, FADE_OUT_DURATION); // Wait for fade out animation
     }, duration);
 
     return () => clearTimeout(timer);
