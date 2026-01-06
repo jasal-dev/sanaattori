@@ -24,6 +24,8 @@ Finnish Wordle-style word game built with Next.js and FastAPI.
    npm install
    ```
 
+   **Note for ARM64/Apple Silicon users:** If you encounter errors related to `lightningcss` native modules, run `npm install` again after the initial install. The platform-specific native modules will be installed automatically based on your system architecture.
+
 2. Set up Python virtual environment for API:
    ```bash
    cd apps/api
