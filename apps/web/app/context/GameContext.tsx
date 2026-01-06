@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { type GameState, type GameSettings, type Guess, type LetterState } from '../types/game';
 import { evaluateGuess, updateRevealedLetters, getRandomSolution } from '../utils/evaluation';
 import { updateStatsAfterGame } from '../utils/stats';
+import { getHardModeConstraints, validateHardMode } from '../utils/hardMode';
 
 interface GameContextType {
   gameState: GameState;
@@ -12,6 +13,8 @@ interface GameContextType {
   submitGuess: () => Promise<void>;
   startNewGame: () => Promise<void>;
   updateSettings: (settings: Partial<GameSettings>) => void;
+  hardModeError: string | null;
+  clearHardModeError: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -32,6 +35,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     revealedLetters: new Map(),
   });
   const [initialized, setInitialized] = useState(false);
+  const [hardModeError, setHardModeError] = useState<string | null>(null);
+
+  const clearHardModeError = useCallback(() => {
+    setHardModeError(null);
+  }, []);
 
   const startNewGame = useCallback(async () => {
     const wordLength = gameState.settings.wordLength || 5;
@@ -97,6 +105,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     
+    // Hard mode validation
+    if (settings.hardMode && guesses.length > 0) {
+      const constraints = getHardModeConstraints(guesses);
+      const error = validateHardMode(currentGuess, constraints);
+      if (error) {
+        setHardModeError(error);
+        return; // Don't submit if hard mode violation
+      }
+    }
+    
     // Evaluate the guess
     const letters = evaluateGuess(currentGuess, solution);
     const newGuess: Guess = {
@@ -135,6 +153,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         submitGuess,
         startNewGame,
         updateSettings,
+        hardModeError,
+        clearHardModeError,
       }}
     >
       {children}
