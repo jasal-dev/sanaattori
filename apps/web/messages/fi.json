@@ -1,0 +1,41 @@
+{
+  "common": {
+    "appName": "SANAATTORI",
+    "close": "×"
+  },
+  "header": {
+    "settings": "Asetukset",
+    "statistics": "Tilastot"
+  },
+  "game": {
+    "won": "🎉 Voitit!",
+    "lost": "Peli päättyi! Sana oli: {word}",
+    "newGame": "Uusi peli",
+    "notInWordList": "Ei sanalistassa"
+  },
+  "settings": {
+    "title": "Asetukset",
+    "wordLength": "Sanan pituus",
+    "wordLengthHint": "Sanan pituuden muuttaminen aloittaa uuden pelin",
+    "hardMode": "Vaikea tila",
+    "hardModeDescription": "Paljastetut vihjeet on käytettävä seuraavissa arvauksissa",
+    "language": "Kieli"
+  },
+  "statistics": {
+    "title": "Tilastot",
+    "played": "Pelattu",
+    "winRate": "Voittoprosentti",
+    "currentStreak": "Nykyinen putki",
+    "maxStreak": "Paras putki",
+    "won": "Voitettu",
+    "lost": "Hävitty",
+    "resetStats": "Nollaa tilastot",
+    "resetConfirm": "Oletko varma? Tätä ei voi perua.",
+    "resetYes": "Kyllä, nollaa",
+    "resetCancel": "Peruuta"
+  },
+  "keyboard": {
+    "enter": "ENTER",
+    "back": "⌫"
+  }
+}

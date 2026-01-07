@@ -1,0 +1,41 @@
+{
+  "common": {
+    "appName": "SANAATTORI",
+    "close": "×"
+  },
+  "header": {
+    "settings": "Inställningar",
+    "statistics": "Statistik"
+  },
+  "game": {
+    "won": "🎉 Du vann!",
+    "lost": "Spelet är över! Ordet var: {word}",
+    "newGame": "Nytt spel",
+    "notInWordList": "Inte i ordlistan"
+  },
+  "settings": {
+    "title": "Inställningar",
+    "wordLength": "Ordlängd",
+    "wordLengthHint": "Ändring av ordlängd startar ett nytt spel",
+    "hardMode": "Svårt läge",
+    "hardModeDescription": "Avslöjade tips måste användas i efterföljande gissningar",
+    "language": "Språk"
+  },
+  "statistics": {
+    "title": "Statistik",
+    "played": "Spelade",
+    "winRate": "Vinstprocent",
+    "currentStreak": "Nuvarande serie",
+    "maxStreak": "Bästa serie",
+    "won": "Vunna",
+    "lost": "Förlorade",
+    "resetStats": "Återställ statistik",
+    "resetConfirm": "Är du säker? Detta kan inte ångras.",
+    "resetYes": "Ja, återställ",
+    "resetCancel": "Avbryt"
+  },
+  "keyboard": {
+    "enter": "ENTER",
+    "back": "⌫"
+  }
+}

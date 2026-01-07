@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getStats, resetStats, type GameStats } from '../utils/stats';
+import { useTranslations } from 'next-intl';
 
 interface StatsModalProps {
   isOpen: boolean;
@@ -9,6 +10,8 @@ interface StatsModalProps {
 }
 
 export default function StatsModal({ isOpen, onClose }: StatsModalProps) {
+  const t = useTranslations('statistics');
+  const tCommon = useTranslations('common');
   const [stats, setStats] = useState<GameStats>({
     played: 0,
     won: 0,
@@ -38,42 +41,42 @@ export default function StatsModal({ isOpen, onClose }: StatsModalProps) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Statistics</h2>
+          <h2 className="text-2xl font-bold">{t('title')}</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl"
           >
-            ×
+            {tCommon('close')}
           </button>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="text-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
             <div className="text-3xl font-bold">{stats.played}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Played</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{t('played')}</div>
           </div>
           <div className="text-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
             <div className="text-3xl font-bold">{winRate}%</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Win Rate</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{t('winRate')}</div>
           </div>
           <div className="text-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
             <div className="text-3xl font-bold">{stats.currentStreak}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Current Streak</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{t('currentStreak')}</div>
           </div>
           <div className="text-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
             <div className="text-3xl font-bold">{stats.maxStreak}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Max Streak</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{t('maxStreak')}</div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="text-center p-4 bg-green-100 dark:bg-green-900 rounded-lg">
             <div className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.won}</div>
-            <div className="text-sm text-green-600 dark:text-green-400">Won</div>
+            <div className="text-sm text-green-600 dark:text-green-400">{t('won')}</div>
           </div>
           <div className="text-center p-4 bg-red-100 dark:bg-red-900 rounded-lg">
             <div className="text-2xl font-bold text-red-700 dark:text-red-300">{stats.lost}</div>
-            <div className="text-sm text-red-600 dark:text-red-400">Lost</div>
+            <div className="text-sm text-red-600 dark:text-red-400">{t('lost')}</div>
           </div>
         </div>
 
@@ -82,25 +85,25 @@ export default function StatsModal({ isOpen, onClose }: StatsModalProps) {
             onClick={() => setShowResetConfirm(true)}
             className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
           >
-            Reset Statistics
+            {t('resetStats')}
           </button>
         ) : (
           <div className="space-y-2">
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-              Are you sure? This cannot be undone.
+              {t('resetConfirm')}
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={handleReset}
                 className="py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
               >
-                Yes, Reset
+                {t('resetYes')}
               </button>
               <button
                 onClick={() => setShowResetConfirm(false)}
                 className="py-2 px-4 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 font-bold rounded-lg transition-colors"
               >
-                Cancel
+                {t('resetCancel')}
               </button>
             </div>
           </div>
