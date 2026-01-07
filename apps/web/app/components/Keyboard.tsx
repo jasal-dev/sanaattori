@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 
 export default function Keyboard() {
-  const { gameState, addLetter, removeLetter, submitGuess } = useGame();
-  const { revealedLetters, gameStatus } = gameState;
+  const { gameState, addLetter, removeLetter, submitGuess, setSelectedBoxIndex } = useGame();
+  const { revealedLetters, gameStatus, selectedBoxIndex, currentGuess, settings } = gameState;
 
   const rows = [
     ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Å'],
@@ -52,7 +52,27 @@ export default function Keyboard() {
       if (e.key === 'Enter') {
         submitGuess();
       } else if (e.key === 'Backspace') {
+        e.preventDefault(); // Prevent browser back navigation
         removeLetter();
+      } else if (e.key === ' ') {
+        e.preventDefault(); // Prevent page scroll
+        // Space means leave the box empty and move to the next one
+        if (selectedBoxIndex !== null && selectedBoxIndex < settings.wordLength - 1) {
+          // Move to next box without adding a letter
+          setSelectedBoxIndex(selectedBoxIndex + 1);
+        }
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const currentIndex = selectedBoxIndex ?? currentGuess.length;
+        if (currentIndex > 0) {
+          setSelectedBoxIndex(currentIndex - 1);
+        }
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const currentIndex = selectedBoxIndex ?? currentGuess.length;
+        if (currentIndex < settings.wordLength - 1) {
+          setSelectedBoxIndex(currentIndex + 1);
+        }
       } else if (/^[a-zäöå]$/i.test(e.key)) {
         addLetter(e.key);
       }
@@ -60,7 +80,7 @@ export default function Keyboard() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameStatus, submitGuess, removeLetter, addLetter]);
+  }, [gameStatus, submitGuess, removeLetter, addLetter, selectedBoxIndex, currentGuess, settings.wordLength, setSelectedBoxIndex]);
 
   return (
     <div className="w-full max-w-screen-sm mx-auto px-2 pb-4">
