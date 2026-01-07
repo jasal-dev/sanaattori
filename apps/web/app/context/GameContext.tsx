@@ -17,6 +17,7 @@ interface GameContextType {
   hardModeError: string | null;
   clearHardModeError: () => void;
   setSelectedBoxIndex: (index: number | null) => void;
+  shouldShake: boolean;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -39,6 +40,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   });
   const [initialized, setInitialized] = useState(false);
   const [hardModeError, setHardModeError] = useState<string | null>(null);
+  const [shouldShake, setShouldShake] = useState(false);
 
   const clearHardModeError = useCallback(() => {
     setHardModeError(null);
@@ -184,6 +186,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const error = validateHardMode(currentGuess, constraints);
       if (error) {
         setHardModeError(error);
+        setShouldShake(true);
+        setTimeout(() => setShouldShake(false), 500);
         return; // Don't submit if hard mode violation
       }
     }
@@ -192,6 +196,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const isValidWord = await apiValidateGuess(currentGuess, settings.wordLength);
     if (!isValidWord) {
       setHardModeError('Not in word list');
+      setShouldShake(true);
+      setTimeout(() => setShouldShake(false), 500);
       return; // Don't submit if not a valid word
     }
     
@@ -237,6 +243,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         hardModeError,
         clearHardModeError,
         setSelectedBoxIndex,
+        shouldShake,
       }}
     >
       {children}

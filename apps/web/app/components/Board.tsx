@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 
 export default function Board() {
   const t = useTranslations('game');
-  const { gameState, startNewGame, setSelectedBoxIndex } = useGame();
+  const { gameState, startNewGame, setSelectedBoxIndex, shouldShake } = useGame();
   const { guesses, currentGuess, settings, gameStatus, selectedBoxIndex } = gameState;
   const { wordLength, maxAttempts } = settings;
 
@@ -51,7 +51,7 @@ export default function Board() {
           return (
             <div
               key={rowIndex}
-              className={`grid gap-1`}
+              className={`grid gap-1 ${isCurrentRow && shouldShake ? 'shake' : ''}`}
               style={{ gridTemplateColumns: `repeat(${wordLength}, minmax(0, 1fr))` }}
             >
               {Array.from({ length: wordLength }).map((_, colIndex) => {
