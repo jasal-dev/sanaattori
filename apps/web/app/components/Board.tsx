@@ -48,7 +48,7 @@ export default function Board() {
                     key={colIndex}
                     className={`w-14 h-14 border-2 flex items-center justify-center text-2xl font-bold uppercase transition-colors ${getLetterColor(
                       state
-                    )} ${hasLetter && state === 'unknown' ? 'border-gray-500 dark:border-gray-400 scale-105' : ''}`}
+                    )} ${hasLetter && state === 'unknown' ? 'border-gray-500 dark:border-gray-400' : ''}`}
                   >
                     {letter}
                   </div>
