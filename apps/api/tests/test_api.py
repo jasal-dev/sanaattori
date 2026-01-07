@@ -70,3 +70,35 @@ def test_validate_guess_finnish_characters():
     assert response.status_code == 200
     # This will depend on whether pöytä is in the word list
     assert "valid" in response.json()
+
+
+def test_get_word_default_length():
+    """Test getting a random word with default length (5)"""
+    response = client.get("/word")
+    assert response.status_code == 200
+    data = response.json()
+    assert "word" in data
+    assert len(data["word"]) == 5
+    assert isinstance(data["word"], str)
+
+
+def test_get_word_specific_length():
+    """Test getting a random word with specific length"""
+    for length in [5, 6, 7]:
+        response = client.get(f"/word?wordLength={length}")
+        assert response.status_code == 200
+        data = response.json()
+        assert "word" in data
+        assert len(data["word"]) == length
+        assert isinstance(data["word"], str)
+
+
+def test_get_word_unsupported_length():
+    """Test getting a word with unsupported length returns fallback"""
+    response = client.get("/word?wordLength=10")
+    assert response.status_code == 200
+    data = response.json()
+    assert "word" in data
+    # Should return fallback word
+    assert isinstance(data["word"], str)
+    assert len(data["word"]) > 0
