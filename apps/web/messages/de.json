@@ -1,0 +1,41 @@
+{
+  "common": {
+    "appName": "SANAATTORI",
+    "close": "×"
+  },
+  "header": {
+    "settings": "Einstellungen",
+    "statistics": "Statistiken"
+  },
+  "game": {
+    "won": "🎉 Du hast gewonnen!",
+    "lost": "Spiel vorbei! Das Wort war: {word}",
+    "newGame": "Neues Spiel",
+    "notInWordList": "Nicht in der Wortliste"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "wordLength": "Wortlänge",
+    "wordLengthHint": "Das Ändern der Wortlänge startet ein neues Spiel",
+    "hardMode": "Schwieriger Modus",
+    "hardModeDescription": "Aufgedeckte Hinweise müssen in nachfolgenden Vermutungen verwendet werden",
+    "language": "Sprache"
+  },
+  "statistics": {
+    "title": "Statistiken",
+    "played": "Gespielt",
+    "winRate": "Gewinnrate",
+    "currentStreak": "Aktuelle Serie",
+    "maxStreak": "Beste Serie",
+    "won": "Gewonnen",
+    "lost": "Verloren",
+    "resetStats": "Statistiken zurücksetzen",
+    "resetConfirm": "Bist du sicher? Dies kann nicht rückgängig gemacht werden.",
+    "resetYes": "Ja, zurücksetzen",
+    "resetCancel": "Abbrechen"
+  },
+  "keyboard": {
+    "enter": "ENTER",
+    "back": "⌫"
+  }
+}

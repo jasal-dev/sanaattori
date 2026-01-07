@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useGame } from '../context/GameContext';
+import { useTranslations } from 'next-intl';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -9,6 +10,9 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+  const t = useTranslations('settings');
+  const tCommon = useTranslations('common');
+  const tGame = useTranslations('game');
   const { gameState, updateSettings, startNewGame } = useGame();
   const [wordLength, setWordLength] = useState<5 | 6 | 7>(gameState.settings.wordLength);
   const [hardMode, setHardMode] = useState(gameState.settings.hardMode);
@@ -37,19 +41,19 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Settings</h2>
+          <h2 className="text-2xl font-bold">{t('title')}</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl"
           >
-            ×
+            {tCommon('close')}
           </button>
         </div>
 
         <div className="space-y-6">
           {/* Word Length Selector */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Word Length</h3>
+            <h3 className="text-lg font-semibold mb-3">{t('wordLength')}</h3>
             <div className="flex gap-3">
               {([5, 6, 7] as const).map((length) => (
                 <button
@@ -66,7 +70,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               ))}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              Changing word length starts a new game
+              {t('wordLengthHint')}
             </p>
           </div>
 
@@ -74,9 +78,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           <div>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold">Hard Mode</h3>
+                <h3 className="text-lg font-semibold">{t('hardMode')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Revealed hints must be used in subsequent guesses
+                  {t('hardModeDescription')}
                 </p>
               </div>
               <button
@@ -100,7 +104,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               onClick={handleNewGame}
               className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors"
             >
-              New Game
+              {tGame('newGame')}
             </button>
           </div>
         </div>

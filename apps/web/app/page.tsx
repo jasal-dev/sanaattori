@@ -5,6 +5,8 @@ import Board from './components/Board';
 import Keyboard from './components/Keyboard';
 import Toast from './components/Toast';
 import { GameProvider, useGame } from './context/GameContext';
+import { LocaleProvider } from './context/LocaleContext';
+import { IntlProvider } from './context/IntlProvider';
 
 function GameContent() {
   const { hardModeError, clearHardModeError } = useGame();
@@ -23,8 +25,12 @@ function GameContent() {
 
 export default function Home() {
   return (
-    <GameProvider>
-      <GameContent />
-    </GameProvider>
+    <LocaleProvider>
+      <IntlProvider>
+        <GameProvider>
+          <GameContent />
+        </GameProvider>
+      </IntlProvider>
+    </LocaleProvider>
   );
 }

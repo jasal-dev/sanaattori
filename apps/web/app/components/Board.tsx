@@ -1,8 +1,10 @@
 'use client';
 
 import { useGame } from '../context/GameContext';
+import { useTranslations } from 'next-intl';
 
 export default function Board() {
+  const t = useTranslations('game');
   const { gameState, startNewGame } = useGame();
   const { guesses, currentGuess, settings, gameStatus } = gameState;
   const { wordLength, maxAttempts } = settings;
@@ -63,13 +65,13 @@ export default function Board() {
       {gameStatus !== 'playing' && (
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 px-6 py-4 rounded-lg shadow-lg border-2 border-gray-300 dark:border-gray-600">
           <p className="text-lg font-bold mb-3 text-center">
-            {gameStatus === 'won' ? '🎉 You won!' : `Game over! The word was: ${gameState.solution.toUpperCase()}`}
+            {gameStatus === 'won' ? t('won') : t('lost', { word: gameState.solution.toUpperCase() })}
           </p>
           <button
             onClick={startNewGame}
             className="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"
           >
-            New Game
+            {t('newGame')}
           </button>
         </div>
       )}

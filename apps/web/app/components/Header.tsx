@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import SettingsModal from './SettingsModal';
 import StatsModal from './StatsModal';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Header() {
   const [showSettings, setShowSettings] = useState(false);
@@ -15,6 +16,7 @@ export default function Header() {
           <div className="flex-1"></div>
           <h1 className="text-2xl font-bold tracking-wide">SANAATTORI</h1>
           <div className="flex-1 flex items-center justify-end gap-2">
+            <LanguageSwitcher />
             <button
               onClick={() => setShowSettings(true)}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
