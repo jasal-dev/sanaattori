@@ -7,9 +7,10 @@ from typing import Set
 app = FastAPI()
 
 # Configure CORS
+# Allow requests from any host on port 3000 (for local network access)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origin_regex=r"https?://[^/]+:3000",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
