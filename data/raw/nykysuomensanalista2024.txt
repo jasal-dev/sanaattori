@@ -1,0 +1,51 @@
+# Sample Finnish words for testing
+# Format: lemma<tab>inflection_class<tab>other_data
+# This is a minimal sample - the real file has ~90,000 words
+
+# 5-letter words
+omena	1	N
+auto	1	N
+kissa	1	N
+koira	1	N
+talo	1	N
+kirja	1	N
+pöytä	1	N
+tuoli	1	N
+käsi	1	N
+jalka	1	N
+päivä	1	N
+aika	1	N
+vuosi	1	N
+kuori	1	N
+suola	1	N
+sokeri	6	N
+nainen	38	N
+lapsi	26	N
+mies	41	N
+mieli	5	N
+tyttö	1	N
+poika	1	N
+
+# 6-letter words
+ihminen	38	N
+kysymys	39	N
+vastaus	39	N
+numero	1	N
+sähkö	1	N
+kahvi	1	N
+leipä	1	N
+maito	1	N
+juusto	1	N
+kynttilä	1	N
+kukka	1	N
+pöllö	1	N
+
+# 7-letter words
+tietokone	48	N
+puhelin	38	N
+ajatus	39	N
+kysely	1	N
+vastaaja	1	N
+opettaja	1	N
+opiskelija	1	N
+työntekijä	1	N

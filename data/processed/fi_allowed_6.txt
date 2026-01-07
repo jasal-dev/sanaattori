@@ -1,0 +1,6 @@
+ajatus
+juusto
+kysely
+nainen
+numero
+sokeri
