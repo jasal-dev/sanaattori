@@ -16,6 +16,7 @@ interface GameContextType {
   updateSettings: (settings: Partial<GameSettings>) => void;
   hardModeError: string | null;
   clearHardModeError: () => void;
+  setSelectedBoxIndex: (index: number | null) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -34,6 +35,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     gameStatus: 'playing',
     settings: DEFAULT_SETTINGS,
     revealedLetters: new Map(),
+    selectedBoxIndex: null,
   });
   const [initialized, setInitialized] = useState(false);
   const [hardModeError, setHardModeError] = useState<string | null>(null);
@@ -53,6 +55,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       currentGuess: '',
       gameStatus: 'playing',
       revealedLetters: new Map(),
+      selectedBoxIndex: null,
     }));
   }, [gameState.settings.wordLength]);
 
@@ -72,17 +75,58 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  const setSelectedBoxIndex = useCallback((index: number | null) => {
+    setGameState(prev => {
+      if (prev.gameStatus !== 'playing') return prev;
+      return {
+        ...prev,
+        selectedBoxIndex: index,
+      };
+    });
+  }, []);
+
   const addLetter = useCallback((letter: string) => {
     setGameState(prev => {
       // Don't add if game is over
       if (prev.gameStatus !== 'playing') return prev;
       
-      // Don't add if current guess is already at max length
-      if (prev.currentGuess.length >= prev.settings.wordLength) return prev;
+      const { currentGuess, settings, selectedBoxIndex } = prev;
+      const wordLength = settings.wordLength;
+      
+      // If there's a selected box, insert letter there
+      if (selectedBoxIndex !== null && selectedBoxIndex >= 0 && selectedBoxIndex < wordLength) {
+        const guessArray = currentGuess.split('');
+        
+        // Pad with empty strings if needed
+        while (guessArray.length < wordLength) {
+          guessArray.push('');
+        }
+        
+        // Insert the letter at the selected position
+        guessArray[selectedBoxIndex] = letter.toLowerCase();
+        
+        // Move to the next empty box or deselect if at the end
+        let nextIndex: number | null = null;
+        for (let i = selectedBoxIndex + 1; i < wordLength; i++) {
+          if (!guessArray[i]) {
+            nextIndex = i;
+            break;
+          }
+        }
+        
+        return {
+          ...prev,
+          currentGuess: guessArray.join(''),
+          selectedBoxIndex: nextIndex,
+        };
+      }
+      
+      // Default behavior: append to the end if not at max length
+      if (currentGuess.length >= wordLength) return prev;
       
       return {
         ...prev,
-        currentGuess: prev.currentGuess + letter.toLowerCase(),
+        currentGuess: currentGuess + letter.toLowerCase(),
       };
     });
   }, []);
@@ -90,11 +134,38 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const removeLetter = useCallback(() => {
     setGameState(prev => {
       if (prev.gameStatus !== 'playing') return prev;
-      if (prev.currentGuess.length === 0) return prev;
       
+      const { currentGuess, selectedBoxIndex, settings } = prev;
+      const wordLength = settings.wordLength;
+      
+      if (currentGuess.length === 0) return prev;
+      
+      // If a box is selected, remove letter from that position
+      if (selectedBoxIndex !== null && selectedBoxIndex >= 0 && selectedBoxIndex < wordLength) {
+        const guessArray = currentGuess.split('');
+        
+        // Pad with empty strings if needed
+        while (guessArray.length < wordLength) {
+          guessArray.push('');
+        }
+        
+        // Remove the letter at the selected position
+        guessArray[selectedBoxIndex] = '';
+        
+        // Clean up trailing empty strings
+        const newGuess = guessArray.join('').replace(/\0/g, '');
+        
+        return {
+          ...prev,
+          currentGuess: newGuess,
+          // Keep the same box selected
+        };
+      }
+      
+      // Default behavior: remove from the end
       return {
         ...prev,
-        currentGuess: prev.currentGuess.slice(0, -1),
+        currentGuess: currentGuess.slice(0, -1),
       };
     });
   }, []);
@@ -150,6 +221,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       currentGuess: '',
       gameStatus: won ? 'won' : lost ? 'lost' : 'playing',
       revealedLetters: newRevealedLetters,
+      selectedBoxIndex: null,
     }));
   }, [gameState]);
 
@@ -164,6 +236,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         updateSettings,
         hardModeError,
         clearHardModeError,
+        setSelectedBoxIndex,
       }}
     >
       {children}

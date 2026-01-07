@@ -5,8 +5,8 @@ import { useTranslations } from 'next-intl';
 
 export default function Board() {
   const t = useTranslations('game');
-  const { gameState, startNewGame } = useGame();
-  const { guesses, currentGuess, settings, gameStatus } = gameState;
+  const { gameState, startNewGame, setSelectedBoxIndex } = useGame();
+  const { guesses, currentGuess, settings, gameStatus, selectedBoxIndex } = gameState;
   const { wordLength, maxAttempts } = settings;
 
   // Get the state color for a letter
@@ -23,6 +23,14 @@ export default function Board() {
     }
   };
 
+  const handleBoxClick = (rowIndex: number, colIndex: number) => {
+    // Only allow clicking on the current row
+    const isCurrentRow = rowIndex === guesses.length;
+    if (isCurrentRow && gameStatus === 'playing') {
+      setSelectedBoxIndex(colIndex);
+    }
+  };
+
   return (
     <div className="flex-1 flex items-center justify-center py-4">
       <div className="grid gap-1">
@@ -30,9 +38,15 @@ export default function Board() {
         {Array.from({ length: maxAttempts }).map((_, rowIndex) => {
           const guess = guesses[rowIndex];
           const isCurrentRow = rowIndex === guesses.length;
-          const letters = isCurrentRow
-            ? currentGuess.split('')
-            : guess?.letters.map((l) => l.char) || [];
+          
+          // For the current row, convert currentGuess to an array with proper spacing
+          let letters: string[];
+          if (isCurrentRow) {
+            const guessArray = currentGuess.split('');
+            letters = Array.from({ length: wordLength }, (_, i) => guessArray[i] || '');
+          } else {
+            letters = guess?.letters.map((l) => l.char) || [];
+          }
 
           return (
             <div
@@ -44,13 +58,17 @@ export default function Board() {
                 const letter = letters[colIndex] || '';
                 const state = guess?.letters[colIndex]?.state || 'unknown';
                 const hasLetter = letter !== '';
+                const isSelected = isCurrentRow && selectedBoxIndex === colIndex && gameStatus === 'playing';
 
                 return (
                   <div
                     key={colIndex}
+                    onClick={() => handleBoxClick(rowIndex, colIndex)}
                     className={`w-14 h-14 border-2 flex items-center justify-center text-2xl font-bold uppercase transition-colors ${getLetterColor(
                       state
-                    )} ${hasLetter && state === 'unknown' ? 'border-gray-500 dark:border-gray-400' : ''}`}
+                    )} ${hasLetter && state === 'unknown' ? 'border-gray-500 dark:border-gray-400' : ''} ${
+                      isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+                    } ${isCurrentRow && gameStatus === 'playing' ? 'cursor-pointer hover:border-blue-300' : ''}`}
                   >
                     {letter}
                   </div>
