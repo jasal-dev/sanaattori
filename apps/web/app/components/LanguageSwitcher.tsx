@@ -4,10 +4,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useLocale, type Locale } from '../context/LocaleContext';
 
 const languages = [
-  { code: 'en' as Locale, name: 'English', flag: '🇬🇧' },
-  { code: 'fi' as Locale, name: 'Suomi', flag: '🇫🇮' },
-  { code: 'sv' as Locale, name: 'Svenska', flag: '🇸🇪' },
-  { code: 'de' as Locale, name: 'Deutsch', flag: '🇩🇪' },
+  { code: 'en' as Locale, name: 'English', flag: '🇬🇧', ariaLabel: 'Switch to English' },
+  { code: 'fi' as Locale, name: 'Suomi', flag: '🇫🇮', ariaLabel: 'Vaihda suomeksi' },
+  { code: 'sv' as Locale, name: 'Svenska', flag: '🇸🇪', ariaLabel: 'Byt till svenska' },
+  { code: 'de' as Locale, name: 'Deutsch', flag: '🇩🇪', ariaLabel: 'Auf Deutsch umschalten' },
 ];
 
 export default function LanguageSwitcher() {
@@ -55,8 +55,9 @@ export default function LanguageSwitcher() {
               className={`w-full px-4 py-2 text-left flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg ${
                 locale === lang.code ? 'bg-gray-100 dark:bg-gray-700' : ''
               }`}
+              aria-label={lang.ariaLabel}
             >
-              <span className="text-xl">{lang.flag}</span>
+              <span className="text-xl" aria-hidden="true">{lang.flag}</span>
               <span className="text-sm font-medium">{lang.name}</span>
             </button>
           ))}

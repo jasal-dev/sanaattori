@@ -4,9 +4,11 @@ import { NextIntlClientProvider } from 'next-intl';
 import { ReactNode, useEffect, useState } from 'react';
 import { useLocale, type Locale } from './LocaleContext';
 
+type Messages = Record<string, any>;
+
 export function IntlProvider({ children }: { children: ReactNode }) {
   const { locale } = useLocale();
-  const [messages, setMessages] = useState<any>(null);
+  const [messages, setMessages] = useState<Messages | null>(null);
 
   useEffect(() => {
     // Load messages for the current locale
