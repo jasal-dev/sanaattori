@@ -61,16 +61,13 @@ export default function Keyboard() {
           // Move to next box without adding a letter
           setSelectedBoxIndex(selectedBoxIndex + 1);
         }
-      } else if (e.key === 'ArrowLeft') {
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
         const currentIndex = selectedBoxIndex ?? currentGuess.length;
-        if (currentIndex > 0) {
+        
+        if (e.key === 'ArrowLeft' && currentIndex > 0) {
           setSelectedBoxIndex(currentIndex - 1);
-        }
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        const currentIndex = selectedBoxIndex ?? currentGuess.length;
-        if (currentIndex < settings.wordLength - 1) {
+        } else if (e.key === 'ArrowRight' && currentIndex < settings.wordLength - 1) {
           setSelectedBoxIndex(currentIndex + 1);
         }
       } else if (/^[a-zäöå]$/i.test(e.key)) {

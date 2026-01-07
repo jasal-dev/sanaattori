@@ -154,8 +154,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // Remove the letter at the selected position
         guessArray[selectedBoxIndex] = '';
         
-        // Clean up trailing empty strings
-        const newGuess = guessArray.join('').replace(/\0/g, '');
+        // Remove trailing empty strings and join
+        let lastNonEmpty = -1;
+        for (let i = guessArray.length - 1; i >= 0; i--) {
+          if (guessArray[i] !== '') {
+            lastNonEmpty = i;
+            break;
+          }
+        }
+        const newGuess = guessArray.slice(0, lastNonEmpty + 1).join('');
         
         return {
           ...prev,
