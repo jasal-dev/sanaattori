@@ -2,7 +2,28 @@
  * API client for the FastAPI backend
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+/**
+ * Get the API base URL based on environment or current hostname
+ * This allows the app to work when accessed from different machines on the network
+ */
+function getApiBaseUrl(): string {
+  // If explicitly set via environment variable, use that
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  // If running in the browser, use the current hostname with port 8000
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    return `${protocol}//${hostname}:8000`;
+  }
+
+  // Fall back to localhost for server-side rendering
+  return 'http://localhost:8000';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ValidateGuessRequest {
   language: string;
