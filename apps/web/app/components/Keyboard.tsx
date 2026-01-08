@@ -56,14 +56,14 @@ export default function Keyboard() {
         removeLetter();
       } else if (e.key === ' ') {
         e.preventDefault(); // Prevent page scroll
-        // Space means leave the box empty and move to the next one
-        if (selectedBoxIndex !== null && selectedBoxIndex < settings.wordLength - 1) {
-          // Move to next box without adding a letter
-          setSelectedBoxIndex(selectedBoxIndex + 1);
+        // Space means leave the current box empty and move to the next one
+        const currentIndex = selectedBoxIndex ?? 0;
+        if (currentIndex < settings.wordLength - 1) {
+          setSelectedBoxIndex(currentIndex + 1);
         }
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
-        const currentIndex = selectedBoxIndex ?? currentGuess.length;
+        const currentIndex = selectedBoxIndex ?? 0;
         
         if (e.key === 'ArrowLeft' && currentIndex > 0) {
           setSelectedBoxIndex(currentIndex - 1);
