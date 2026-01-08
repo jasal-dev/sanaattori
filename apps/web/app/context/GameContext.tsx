@@ -87,16 +87,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Helper function to remove trailing empty strings from guess array
+  // Helper function to remove trailing null characters from guess array
   const trimGuessArray = (guessArray: string[]): string => {
     let lastNonEmpty = -1;
     for (let i = guessArray.length - 1; i >= 0; i--) {
-      if (guessArray[i] !== '') {
+      if (guessArray[i] !== '' && guessArray[i] !== '\0') {
         lastNonEmpty = i;
         break;
       }
     }
-    return guessArray.slice(0, lastNonEmpty + 1).join('');
+    // Keep null characters for positions before the last letter
+    const trimmed = guessArray.slice(0, lastNonEmpty + 1);
+    return trimmed.join('');
   };
 
   const addLetter = useCallback((letter: string) => {
@@ -112,11 +114,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       
       // If there's a target box, insert letter there
       if (targetIndex >= 0 && targetIndex < wordLength) {
+        // Convert currentGuess to fixed-length array, using '\0' for empty positions
         const guessArray = currentGuess.split('');
         
-        // Pad with empty strings if needed
+        // Pad with null characters to maintain position
         while (guessArray.length < wordLength) {
-          guessArray.push('');
+          guessArray.push('\0');
         }
         
         // Insert the letter at the target position
@@ -125,12 +128,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // Move to the next empty box or deselect if at the end
         let nextIndex: number | null = null;
         for (let i = targetIndex + 1; i < wordLength; i++) {
-          if (!guessArray[i]) {
+          if (!guessArray[i] || guessArray[i] === '\0') {
             nextIndex = i;
             break;
           }
         }
         
+        // Join array, keeping null characters to preserve positions
         return {
           ...prev,
           currentGuess: guessArray.join(''),
@@ -155,21 +159,21 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const { currentGuess, selectedBoxIndex, settings } = prev;
       const wordLength = settings.wordLength;
       
-      if (currentGuess.length === 0) return prev;
+      if (currentGuess.replace(/\0/g, '').length === 0) return prev; // No real letters
       
       // selectedBoxIndex should always be set
       if (selectedBoxIndex !== null && selectedBoxIndex >= 0 && selectedBoxIndex < wordLength) {
         const guessArray = currentGuess.split('');
         
-        // Pad with empty strings if needed
+        // Pad with null characters if needed
         while (guessArray.length < wordLength) {
-          guessArray.push('');
+          guessArray.push('\0');
         }
         
         // Check if there's a letter at the selected position
-        if (guessArray[selectedBoxIndex]) {
+        if (guessArray[selectedBoxIndex] && guessArray[selectedBoxIndex] !== '\0') {
           // Remove the letter at the selected position
-          guessArray[selectedBoxIndex] = '';
+          guessArray[selectedBoxIndex] = '\0';
           
           return {
             ...prev,
@@ -179,8 +183,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         } else if (selectedBoxIndex > 0) {
           // If current box is empty, move to previous box and remove from there
           const prevIndex = selectedBoxIndex - 1;
-          if (guessArray[prevIndex]) {
-            guessArray[prevIndex] = '';
+          if (guessArray[prevIndex] && guessArray[prevIndex] !== '\0') {
+            guessArray[prevIndex] = '\0';
             
             return {
               ...prev,
@@ -195,7 +199,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       
       // Fallback: remove from the end and select the previous position
       const newGuess = currentGuess.slice(0, -1);
-      const newSelectedIndex = newGuess.length > 0 ? newGuess.length - 1 : 0;
+      const newSelectedIndex = newGuess.replace(/\0/g, '').length > 0 ? newGuess.length - 1 : 0;
       
       return {
         ...prev,
@@ -208,15 +212,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const submitGuess = useCallback(async () => {
     const { currentGuess, solution, guesses, settings, revealedLetters } = gameState;
     
+    // Strip null characters for validation
+    const cleanGuess = currentGuess.replace(/\0/g, '');
+    
     // Validate guess length
-    if (currentGuess.length !== settings.wordLength) {
+    if (cleanGuess.length !== settings.wordLength) {
       return;
     }
     
     // Hard mode validation
     if (settings.hardMode && guesses.length > 0) {
       const constraints = getHardModeConstraints(guesses);
-      const error = validateHardMode(currentGuess, constraints);
+      const error = validateHardMode(cleanGuess, constraints);
       if (error) {
         setHardModeError(error);
         setShouldShake(true);
@@ -226,7 +233,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
     
     // API validation - check if the guess is a valid word
-    const isValidWord = await apiValidateGuess(currentGuess, settings.wordLength);
+    const isValidWord = await apiValidateGuess(cleanGuess, settings.wordLength);
     if (!isValidWord) {
       setHardModeError('Not in word list');
       setShouldShake(true);
@@ -235,17 +242,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
     
     // Evaluate the guess
-    const letters = evaluateGuess(currentGuess, solution);
+    const letters = evaluateGuess(cleanGuess, solution);
     const newGuess: Guess = {
-      word: currentGuess,
+      word: cleanGuess,
       letters,
     };
     
     // Update revealed letters
     const newRevealedLetters = updateRevealedLetters(revealedLetters, letters);
     
-    // Check if won
-    const won = currentGuess.toLowerCase() === solution.toLowerCase();
+    // Check if won (use cleaned guess)
+    const won = cleanGuess.toLowerCase() === solution.toLowerCase();
     const newGuesses = [...guesses, newGuess];
     const lost = !won && newGuesses.length >= settings.maxAttempts;
     

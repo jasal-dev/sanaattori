@@ -42,7 +42,8 @@ export default function Board() {
           // For the current row, convert currentGuess to an array with proper spacing
           let letters: string[];
           if (isCurrentRow) {
-            const guessArray = currentGuess.split('');
+            // Handle null characters used for position preservation
+            const guessArray = currentGuess.split('').map(c => c === '\0' ? '' : c);
             letters = Array.from({ length: wordLength }, (_, i) => guessArray[i] || '');
           } else {
             letters = guess?.letters.map((l) => l.char) || [];
