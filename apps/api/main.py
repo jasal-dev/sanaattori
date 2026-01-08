@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from pathlib import Path
 from typing import Set, List, Optional, Annotated
+from datetime import datetime, timedelta, timezone
 import random
 import os
 from sqlalchemy.orm import Session as DBSession
@@ -374,11 +375,10 @@ async def get_weekly_leaderboard(
     """
     Get the weekly leaderboard (top players in the last 7 days).
     """
-    from datetime import datetime, timedelta
     from sqlalchemy import func
     
-    # Calculate the date 7 days ago
-    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+    # Calculate the date 7 days ago (use naive datetime for SQLite compatibility)
+    seven_days_ago = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
     
     # Query to get top players by total score in the last 7 days
     results = db.query(
@@ -410,7 +410,7 @@ async def get_weekly_leaderboard(
     return WeeklyLeaderboardResponse(
         period="weekly",
         start_date=seven_days_ago.isoformat(),
-        end_date=datetime.utcnow().isoformat(),
+        end_date=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
         leaderboard=leaderboard
     )
 

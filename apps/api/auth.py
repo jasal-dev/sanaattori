@@ -2,7 +2,7 @@
 import os
 import secrets
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -13,7 +13,15 @@ from models import User, Session as SessionModel
 ph = PasswordHasher()
 
 # Secret key for token generation
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    # In development, generate a random key
+    # In production, this should fail explicitly
+    if os.getenv("ENVIRONMENT") == "production":
+        raise ValueError("SECRET_KEY must be set in production environment")
+    SECRET_KEY = secrets.token_hex(32)
+    print(f"WARNING: Using auto-generated SECRET_KEY for development. Set SECRET_KEY in .env for production.")
+
 
 
 def hash_password(password: str) -> str:
@@ -86,7 +94,8 @@ def create_session(db: Session, user_id: int, expires_in_seconds: int = 604800) 
     """
     token = generate_session_token()
     token_hash = hash_token(token)
-    expires_at = datetime.utcnow() + timedelta(seconds=expires_in_seconds)
+    # Use naive datetime for SQLite compatibility
+    expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=expires_in_seconds)
     
     session = SessionModel(
         user_id=user_id,
@@ -112,8 +121,10 @@ def validate_session(db: Session, token: str) -> Optional[User]:
     if not session:
         return None
     
-    # Check if session is expired
-    if session.expires_at < datetime.utcnow():
+    # Check if session is expired (use naive datetime for consistency)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    
+    if session.expires_at < now:
         # Clean up expired session
         db.delete(session)
         db.commit()
@@ -147,8 +158,11 @@ def cleanup_expired_sessions(db: Session) -> int:
     
     Returns the number of sessions deleted.
     """
+    # Use naive datetime for consistency
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    
     count = db.query(SessionModel).filter(
-        SessionModel.expires_at < datetime.utcnow()
+        SessionModel.expires_at < now
     ).delete()
     db.commit()
     return count

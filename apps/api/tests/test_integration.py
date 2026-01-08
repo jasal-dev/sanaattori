@@ -3,16 +3,6 @@
 These tests use a test database and cover the full integration of the FastAPI app
 with PostgreSQL.
 """
-import sys
-from pathlib import Path
-import os
-
-# Add parent directory to path to import modules
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Override DATABASE_URL before importing main
-os.environ["DATABASE_URL"] = "sqlite:///./test.db"
-
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
