@@ -23,7 +23,6 @@ if not SECRET_KEY:
     print(f"WARNING: Using auto-generated SECRET_KEY for development. Set SECRET_KEY in .env for production.")
 
 
-
 def hash_password(password: str) -> str:
     """Hash a password using argon2id."""
     return ph.hash(password)
