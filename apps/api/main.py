@@ -1,20 +1,35 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Depends, Response, Cookie, status
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pathlib import Path
-from typing import Set, List
+from typing import Set, List, Optional, Annotated
 import random
+import os
+from sqlalchemy.orm import Session as DBSession
+
+# Import database and auth utilities
+from database import get_db, engine, Base
+from models import User, GameResult
+import auth
 
 app = FastAPI()
 
+# Get environment
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
 # Configure CORS
-# Allow requests from any host on port 3000 (for local network access)
+# Allow requests from frontend origins with credentials
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https?://[^/]+:3000",
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        # Add production origins here
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Set-Cookie"],
 )
 
 
@@ -35,6 +50,61 @@ class ValidateGuessResponse(BaseModel):
 
 class GetWordResponse(BaseModel):
     word: str
+
+
+class RegisterRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=8, max_length=100)
+
+
+class RegisterResponse(BaseModel):
+    id: int
+    username: str
+    created_at: str
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    message: str
+    user: dict
+
+
+class LogoutResponse(BaseModel):
+    message: str
+
+
+class SubmitGameResultRequest(BaseModel):
+    score: int = Field(..., gt=0)
+
+
+class GameResultResponse(BaseModel):
+    id: int
+    user_id: int
+    score: int
+    played_at: str
+
+
+class LeaderboardEntry(BaseModel):
+    rank: int
+    username: str
+    total_score: int
+    games_played: int
+
+
+class WeeklyLeaderboardResponse(BaseModel):
+    period: str
+    start_date: str
+    end_date: str
+    leaderboard: List[LeaderboardEntry]
+
+
+class AllTimeLeaderboardResponse(BaseModel):
+    period: str
+    leaderboard: List[LeaderboardEntry]
 
 
 def load_word_lists():
@@ -69,10 +139,48 @@ def load_word_lists():
             solution_lists[length] = []
 
 
+def get_current_user(
+    session_token: Annotated[Optional[str], Cookie()] = None,
+    db: DBSession = Depends(get_db)
+) -> User:
+    """
+    Dependency to get the current authenticated user from session cookie.
+    Raises 401 if not authenticated or session is invalid/expired.
+    """
+    if not session_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
+    
+    user = auth.validate_session(db, session_token)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired session"
+        )
+    
+    return user
+
+
 @app.on_event("startup")
 async def startup_event():
-    """Load word lists when the app starts."""
+    """Initialize the app on startup."""
+    # Create database tables
+    Base.metadata.create_all(bind=engine)
+    print("Database tables created/verified")
+    
+    # Load word lists
     load_word_lists()
+    
+    # Clean up expired sessions on startup
+    from database import SessionLocal
+    db = SessionLocal()
+    try:
+        count = auth.cleanup_expired_sessions(db)
+        print(f"Cleaned up {count} expired sessions")
+    finally:
+        db.close()
 
 
 @app.get("/health")
@@ -141,4 +249,209 @@ async def get_word(wordLength: int = 5):
     # Return a random word from the solutions
     word = random.choice(solutions)
     return GetWordResponse(word=word)
+
+
+# ==================== Authentication Endpoints ====================
+
+@app.post("/auth/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
+async def register(request: RegisterRequest, db: DBSession = Depends(get_db)):
+    """
+    Register a new user account.
+    
+    - Passwords are hashed using argon2id
+    - Username must be unique
+    """
+    user = auth.create_user(db, request.username, request.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username already exists"
+        )
+    
+    return RegisterResponse(
+        id=user.id,
+        username=user.username,
+        created_at=user.created_at.isoformat()
+    )
+
+
+@app.post("/auth/login", response_model=LoginResponse)
+async def login(request: LoginRequest, response: Response, db: DBSession = Depends(get_db)):
+    """
+    Authenticate user and create a session.
+    
+    Sets a secure HttpOnly cookie with the session token.
+    """
+    user = auth.authenticate_user(db, request.username, request.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password"
+        )
+    
+    # Create session
+    token, session = auth.create_session(db, user.id)
+    
+    # Set secure cookie
+    response.set_cookie(
+        key="session_token",
+        value=token,
+        httponly=True,
+        secure=(ENVIRONMENT == "production"),
+        samesite="lax",
+        max_age=604800,  # 7 days
+        path="/"
+    )
+    
+    return LoginResponse(
+        message="Login successful",
+        user={"id": user.id, "username": user.username}
+    )
+
+
+@app.post("/auth/logout", response_model=LogoutResponse)
+async def logout(
+    response: Response,
+    session_token: Annotated[Optional[str], Cookie()] = None,
+    db: DBSession = Depends(get_db)
+):
+    """
+    End the current session and clear the cookie.
+    """
+    if session_token:
+        auth.delete_session(db, session_token)
+    
+    # Clear the cookie
+    response.set_cookie(
+        key="session_token",
+        value="",
+        httponly=True,
+        secure=(ENVIRONMENT == "production"),
+        samesite="lax",
+        max_age=0,
+        path="/"
+    )
+    
+    return LogoutResponse(message="Logout successful")
+
+
+# ==================== Game Endpoints ====================
+
+@app.post("/games/submit", response_model=GameResultResponse, status_code=status.HTTP_201_CREATED)
+async def submit_game_result(
+    request: SubmitGameResultRequest,
+    current_user: User = Depends(get_current_user),
+    db: DBSession = Depends(get_db)
+):
+    """
+    Submit a game result (requires authentication).
+    
+    The played_at timestamp is automatically set to the current time.
+    """
+    game_result = GameResult(
+        user_id=current_user.id,
+        score=request.score
+    )
+    db.add(game_result)
+    db.commit()
+    db.refresh(game_result)
+    
+    return GameResultResponse(
+        id=game_result.id,
+        user_id=game_result.user_id,
+        score=game_result.score,
+        played_at=game_result.played_at.isoformat()
+    )
+
+
+# ==================== Leaderboard Endpoints ====================
+
+@app.get("/leaderboard/weekly", response_model=WeeklyLeaderboardResponse)
+async def get_weekly_leaderboard(
+    limit: int = 10,
+    db: DBSession = Depends(get_db)
+):
+    """
+    Get the weekly leaderboard (top players in the last 7 days).
+    """
+    from datetime import datetime, timedelta
+    from sqlalchemy import func
+    
+    # Calculate the date 7 days ago
+    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+    
+    # Query to get top players by total score in the last 7 days
+    results = db.query(
+        User.username,
+        func.sum(GameResult.score).label('total_score'),
+        func.count(GameResult.id).label('games_played')
+    ).join(
+        GameResult, User.id == GameResult.user_id
+    ).filter(
+        GameResult.played_at >= seven_days_ago
+    ).group_by(
+        User.id, User.username
+    ).order_by(
+        func.sum(GameResult.score).desc(),
+        func.count(GameResult.id).asc()
+    ).limit(min(limit, 100)).all()
+    
+    # Build leaderboard with ranks
+    leaderboard = [
+        LeaderboardEntry(
+            rank=idx + 1,
+            username=result.username,
+            total_score=result.total_score,
+            games_played=result.games_played
+        )
+        for idx, result in enumerate(results)
+    ]
+    
+    return WeeklyLeaderboardResponse(
+        period="weekly",
+        start_date=seven_days_ago.isoformat(),
+        end_date=datetime.utcnow().isoformat(),
+        leaderboard=leaderboard
+    )
+
+
+@app.get("/leaderboard/alltime", response_model=AllTimeLeaderboardResponse)
+async def get_alltime_leaderboard(
+    limit: int = 10,
+    db: DBSession = Depends(get_db)
+):
+    """
+    Get the all-time leaderboard (top players of all time).
+    """
+    from sqlalchemy import func
+    
+    # Query to get top players by total score all-time
+    results = db.query(
+        User.username,
+        func.sum(GameResult.score).label('total_score'),
+        func.count(GameResult.id).label('games_played')
+    ).join(
+        GameResult, User.id == GameResult.user_id
+    ).group_by(
+        User.id, User.username
+    ).order_by(
+        func.sum(GameResult.score).desc(),
+        func.count(GameResult.id).asc()
+    ).limit(min(limit, 100)).all()
+    
+    # Build leaderboard with ranks
+    leaderboard = [
+        LeaderboardEntry(
+            rank=idx + 1,
+            username=result.username,
+            total_score=result.total_score,
+            games_played=result.games_played
+        )
+        for idx, result in enumerate(results)
+    ]
+    
+    return AllTimeLeaderboardResponse(
+        period="all-time",
+        leaderboard=leaderboard
+    )
 
