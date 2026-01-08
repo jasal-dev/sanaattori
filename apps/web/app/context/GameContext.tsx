@@ -87,6 +87,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // Helper function to remove trailing empty strings from guess array
+  const trimGuessArray = (guessArray: string[]): string => {
+    let lastNonEmpty = -1;
+    for (let i = guessArray.length - 1; i >= 0; i--) {
+      if (guessArray[i] !== '') {
+        lastNonEmpty = i;
+        break;
+      }
+    }
+    return guessArray.slice(0, lastNonEmpty + 1).join('');
+  };
+
   const addLetter = useCallback((letter: string) => {
     setGameState(prev => {
       // Don't add if game is over
@@ -95,7 +107,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const { currentGuess, settings, selectedBoxIndex } = prev;
       const wordLength = settings.wordLength;
       
-      // Default to first box if nothing is selected
+      // selectedBoxIndex should always be set, but default to 0 as safety
       const targetIndex = selectedBoxIndex ?? 0;
       
       // If there's a target box, insert letter there
@@ -145,7 +157,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       
       if (currentGuess.length === 0) return prev;
       
-      // If a box is selected, remove letter from that position
+      // selectedBoxIndex should always be set
       if (selectedBoxIndex !== null && selectedBoxIndex >= 0 && selectedBoxIndex < wordLength) {
         const guessArray = currentGuess.split('');
         
@@ -159,19 +171,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           // Remove the letter at the selected position
           guessArray[selectedBoxIndex] = '';
           
-          // Remove trailing empty strings and join
-          let lastNonEmpty = -1;
-          for (let i = guessArray.length - 1; i >= 0; i--) {
-            if (guessArray[i] !== '') {
-              lastNonEmpty = i;
-              break;
-            }
-          }
-          const newGuess = guessArray.slice(0, lastNonEmpty + 1).join('');
-          
           return {
             ...prev,
-            currentGuess: newGuess,
+            currentGuess: trimGuessArray(guessArray),
             // Keep the same box selected
           };
         } else if (selectedBoxIndex > 0) {
@@ -180,19 +182,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           if (guessArray[prevIndex]) {
             guessArray[prevIndex] = '';
             
-            // Remove trailing empty strings and join
-            let lastNonEmpty = -1;
-            for (let i = guessArray.length - 1; i >= 0; i--) {
-              if (guessArray[i] !== '') {
-                lastNonEmpty = i;
-                break;
-              }
-            }
-            const newGuess = guessArray.slice(0, lastNonEmpty + 1).join('');
-            
             return {
               ...prev,
-              currentGuess: newGuess,
+              currentGuess: trimGuessArray(guessArray),
               selectedBoxIndex: prevIndex,
             };
           }
@@ -201,12 +193,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         return prev;
       }
       
-      // Default behavior: remove from the end and select the previous position
+      // Fallback: remove from the end and select the previous position
       const newGuess = currentGuess.slice(0, -1);
+      const newSelectedIndex = newGuess.length > 0 ? newGuess.length - 1 : 0;
+      
       return {
         ...prev,
         currentGuess: newGuess,
-        selectedBoxIndex: newGuess.length > 0 ? newGuess.length - 1 : 0,
+        selectedBoxIndex: newSelectedIndex,
       };
     });
   }, []);
