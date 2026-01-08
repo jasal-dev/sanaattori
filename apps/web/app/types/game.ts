@@ -27,4 +27,5 @@ export interface GameState {
   gameStatus: 'playing' | 'won' | 'lost';
   settings: GameSettings;
   revealedLetters: Map<string, LetterState>;
+  selectedBoxIndex: number | null;
 }

@@ -79,28 +79,9 @@ export function updateRevealedLetters(
 }
 
 /**
- * Get a random solution from the solutions list
+ * Get a random solution from the backend API
  */
 export async function getRandomSolution(wordLength: number): Promise<string> {
-  try {
-    const response = await fetch(`/data/processed/fi_solutions_${wordLength}.txt`);
-    const text = await response.text();
-    const words = text.trim().split('\n').filter(word => word.length === wordLength);
-    
-    if (words.length === 0) {
-      throw new Error(`No solutions available for length ${wordLength}`);
-    }
-    
-    const randomIndex = Math.floor(Math.random() * words.length);
-    return words[randomIndex].toLowerCase();
-  } catch (error) {
-    console.error('Error loading solution:', error);
-    // Fallback to a default word for each length
-    const fallbacks: Record<number, string> = {
-      5: 'omena',
-      6: 'ajatus',
-      7: 'ihminen',
-    };
-    return fallbacks[wordLength] || 'omena';
-  }
+  const { getWord } = await import('./api');
+  return getWord(wordLength);
 }
