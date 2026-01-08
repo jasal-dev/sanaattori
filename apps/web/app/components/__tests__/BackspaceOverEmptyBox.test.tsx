@@ -137,7 +137,5 @@ describe('Backspace Over Empty Box', () => {
 
     expect(boxes[0].textContent).toBe(''); // 'K' removed
     expect(capturedState.selectedBoxIndex).toBe(0);
-
-    console.log('Test passed! Backspace works correctly over empty boxes');
   });
 });

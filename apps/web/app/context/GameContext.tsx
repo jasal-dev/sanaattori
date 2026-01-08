@@ -193,6 +193,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
               };
             }
           }
+          // If no letters found going backwards, return unchanged state
         }
         
         return prev;
