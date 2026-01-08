@@ -41,7 +41,7 @@ function GameStateInspector({ onStateChange }: { onStateChange: (state: any) => 
 }
 
 describe('Backspace Over Empty Box', () => {
-  it('should handle backspace correctly when there are empty boxes: KI_SA -> backspace through all', async () => {
+  it('should stop at empty boxes when backspacing: KI_SA -> backspace step by step', async () => {
     let capturedState: any = null;
     const onStateChange = (state: any) => {
       capturedState = state;
@@ -98,9 +98,8 @@ describe('Backspace Over Empty Box', () => {
     expect(boxes[2].textContent).toBe(''); // empty
     expect(boxes[3].textContent).toBe('s');
     expect(boxes[4].textContent).toBe('a');
-    expect(capturedState.selectedBoxIndex).toBe(null); // No next empty box
 
-    // Now test backspace behavior
+    // Now test new backspace behavior - should stop at each position
     // First backspace with selectedBoxIndex = null should remove last letter 'A'
     act(() => {
       fireEvent.keyDown(window, { key: 'Backspace' });
@@ -108,9 +107,9 @@ describe('Backspace Over Empty Box', () => {
     await act(async () => await new Promise(resolve => setTimeout(resolve, 50)));
 
     expect(boxes[4].textContent).toBe(''); // 'A' removed
-    expect(capturedState.selectedBoxIndex).toBe(3); // Should select where 'S' is
+    expect(capturedState.selectedBoxIndex).toBe(3); // Moved to 'S' position
 
-    // Press backspace again - should remove 'S' and select position 3
+    // Press backspace - should remove 'S'
     act(() => {
       fireEvent.keyDown(window, { key: 'Backspace' });
     });
@@ -119,23 +118,49 @@ describe('Backspace Over Empty Box', () => {
     expect(boxes[3].textContent).toBe(''); // 'S' removed
     expect(capturedState.selectedBoxIndex).toBe(3); // Stays at position 3
 
-    // Press backspace again - should SKIP empty position 2 and remove 'I', select position 1
+    // Press backspace - should move to empty position 2
     act(() => {
       fireEvent.keyDown(window, { key: 'Backspace' });
     });
     await act(async () => await new Promise(resolve => setTimeout(resolve, 50)));
 
     expect(boxes[2].textContent).toBe(''); // Still empty
-    expect(boxes[1].textContent).toBe(''); // 'I' removed
-    expect(capturedState.selectedBoxIndex).toBe(1); // Selected position 1
+    expect(capturedState.selectedBoxIndex).toBe(2); // Moved to empty position 2
 
-    // Press backspace again - should remove 'K' and select position 0
+    // Press backspace - should move to position 1 (at 'I')
+    act(() => {
+      fireEvent.keyDown(window, { key: 'Backspace' });
+    });
+    await act(async () => await new Promise(resolve => setTimeout(resolve, 50)));
+
+    expect(boxes[1].textContent).toBe('i'); // Still has 'I'
+    expect(capturedState.selectedBoxIndex).toBe(1); // Moved to position 1
+
+    // Press backspace - should remove 'I'
+    act(() => {
+      fireEvent.keyDown(window, { key: 'Backspace' });
+    });
+    await act(async () => await new Promise(resolve => setTimeout(resolve, 50)));
+
+    expect(boxes[1].textContent).toBe(''); // 'I' removed
+    expect(capturedState.selectedBoxIndex).toBe(1); // Stays at position 1
+
+    // Press backspace - should move to position 0 (at 'K')
+    act(() => {
+      fireEvent.keyDown(window, { key: 'Backspace' });
+    });
+    await act(async () => await new Promise(resolve => setTimeout(resolve, 50)));
+
+    expect(boxes[0].textContent).toBe('k'); // Still has 'K'
+    expect(capturedState.selectedBoxIndex).toBe(0); // Moved to position 0
+
+    // Press backspace - should remove 'K'
     act(() => {
       fireEvent.keyDown(window, { key: 'Backspace' });
     });
     await act(async () => await new Promise(resolve => setTimeout(resolve, 50)));
 
     expect(boxes[0].textContent).toBe(''); // 'K' removed
-    expect(capturedState.selectedBoxIndex).toBe(0);
+    expect(capturedState.selectedBoxIndex).toBe(0); // Stays at position 0
   });
 });

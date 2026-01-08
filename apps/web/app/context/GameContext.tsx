@@ -181,19 +181,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             // Keep the same box selected
           };
         } else if (selectedBoxIndex > 0) {
-          // If current box is empty, search backwards for a letter to remove
-          for (let i = selectedBoxIndex - 1; i >= 0; i--) {
-            if (guessArray[i] && guessArray[i] !== '\0') {
-              guessArray[i] = '\0';
-              
-              return {
-                ...prev,
-                currentGuess: trimGuessArray(guessArray),
-                selectedBoxIndex: i,
-              };
-            }
-          }
-          // If no letters found going backwards, return unchanged state
+          // If current box is empty, just move selection to the previous box
+          // This allows users to step through empty boxes with backspace
+          return {
+            ...prev,
+            selectedBoxIndex: selectedBoxIndex - 1,
+          };
         }
         
         return prev;
