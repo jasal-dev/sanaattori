@@ -26,6 +26,7 @@ services:
     environment:
       DATABASE_URL: postgresql://sanaattori:${POSTGRES_PASSWORD:-changeme}@db:5432/sanaattori
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      ENVIRONMENT: development
     volumes:
       - ./apps/api:/app
       - ./data:/data
@@ -35,6 +36,23 @@ services:
       db:
         condition: service_healthy
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: sanaattori-web
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    command: npm run dev
 
 volumes:
   postgres_data:
