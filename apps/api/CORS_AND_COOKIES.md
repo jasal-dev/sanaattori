@@ -6,15 +6,36 @@ This checklist ensures correct CORS handling for browser-based authentication wi
 
 ### 1. CORS Middleware Setup
 
+**Development Environment:**
+
+For local development, including access from other machines on the local network:
+
+```python
+from fastapi.middleware.cors import CORSMiddleware
+
+# Allow any host on port 3000 for development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https?://[^/]+:3000",  # Matches http://192.168.x.x:3000, etc.
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Set-Cookie"],
+)
+```
+
+**Production Environment:**
+
+For production, use explicit origin list:
+
 ```python
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",      # Local development
-        "http://127.0.0.1:3000",      # Alternative localhost
-        "https://yourdomain.com",      # Production domain
+        "https://yourdomain.com",
+        "https://www.yourdomain.com",
     ],
     allow_credentials=True,            # ✅ CRITICAL: Must be True for cookies
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -23,11 +44,41 @@ app.add_middleware(
 )
 ```
 
+**Environment-Based Configuration (Recommended):**
+
+```python
+import os
+
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+if ENVIRONMENT == "production":
+    allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+        expose_headers=["Set-Cookie"],
+    )
+else:
+    # Development: allow any host on port 3000
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r"https?://[^/]+:3000",
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+        expose_headers=["Set-Cookie"],
+    )
+```
+
 **Important Notes:**
 - ✅ `allow_credentials=True` is required for cookie-based authentication
 - ✅ `allow_origins` must list specific origins (cannot use `["*"]` with credentials)
-- ✅ Include all frontend URLs (local development + production)
-- ✅ Use `allow_origin_regex` if you need pattern matching for multiple hosts
+- ✅ In production, set `ALLOWED_ORIGINS` environment variable with comma-separated origins
+- ✅ In development, `allow_origin_regex` matches any host on port 3000 for local network access
+- ✅ Use `allow_origin_regex` for flexible pattern matching (e.g., local network IPs)
 
 ### 2. Cookie Configuration
 

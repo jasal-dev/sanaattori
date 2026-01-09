@@ -20,18 +20,27 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 # Configure CORS
 # Allow requests from frontend origins with credentials
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        # Add production origins here
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-    expose_headers=["Set-Cookie"],
-)
+if ENVIRONMENT == "production":
+    # In production, use explicit origin list from environment variable
+    allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+        expose_headers=["Set-Cookie"],
+    )
+else:
+    # In development, allow any host on port 3000 for local network access
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r"https?://[^/]+:3000",
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+        expose_headers=["Set-Cookie"],
+    )
 
 
 # Word lists loaded at startup
