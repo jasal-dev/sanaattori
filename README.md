@@ -69,6 +69,56 @@ npm run build
 npm run lint
 ```
 
+## Docker Setup
+
+### Using Docker Compose (Recommended for Development)
+
+1. Create a `.env` file from the example:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Update the `.env` file with your configuration (especially change `POSTGRES_PASSWORD` and `SECRET_KEY` for production).
+
+3. Start all services:
+   ```bash
+   docker-compose up -d
+   ```
+
+   This will start:
+   - PostgreSQL database on port 5432
+   - FastAPI backend on http://localhost:8000
+   - Next.js frontend on http://localhost:3000
+
+4. View logs:
+   ```bash
+   docker-compose logs -f
+   
+   # Or for a specific service
+   docker-compose logs -f web
+   docker-compose logs -f api
+   ```
+
+5. Stop the services:
+   ```bash
+   docker-compose down
+   ```
+
+6. Stop and remove volumes (⚠️ this will delete all data):
+   ```bash
+   docker-compose down -v
+   ```
+
+### Running Tests in Docker
+
+```bash
+# Backend tests
+docker-compose exec api pytest
+
+# Frontend tests
+docker-compose exec web npm test
+```
+
 ## License
 
 See individual component licenses in respective directories.
