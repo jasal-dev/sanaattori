@@ -4,18 +4,20 @@ This document describes how to run the automated tests for Sanaattori.
 
 ## Frontend Tests
 
-The frontend tests use Jest and React Testing Library to test the core game logic.
+### Sanasto Game Tests
 
-### Running Frontend Tests
+The Sanasto game tests use Jest and React Testing Library to test the core game logic.
+
+### Running Sanasto Tests
 
 ```bash
-cd apps/web
+cd apps/games/sanasto
 npm test
 ```
 
 ### Test Coverage
 
-The frontend tests cover:
+The Sanasto game tests cover:
 - **Wordle evaluation logic** (`app/utils/__tests__/evaluation.test.ts`)
   - Correct letter matching
   - Present letter matching (wrong position)
@@ -41,7 +43,7 @@ The frontend tests cover:
 To run tests in watch mode for development:
 
 ```bash
-cd apps/web
+cd apps/games/sanasto
 npm run test:watch
 ```
 
@@ -82,15 +84,16 @@ This will run both frontend and backend tests sequentially.
 
 ```
 apps/
-├── web/
-│   ├── app/
-│   │   └── utils/
-│   │       └── __tests__/
-│   │           ├── evaluation.test.ts
-│   │           ├── hardMode.test.ts
-│   │           └── stats.test.ts
-│   ├── jest.config.ts
-│   └── jest.setup.ts
+├── games/
+│   └── sanasto/
+│       └── app/
+│           ├── utils/
+│           │   └── __tests__/
+│           │       ├── evaluation.test.ts
+│           │       ├── hardMode.test.ts
+│           │       └── stats.test.ts
+│           ├── jest.config.ts
+│           └── jest.setup.ts
 └── api/
     └── tests/
         └── test_api.py
@@ -100,7 +103,7 @@ apps/
 
 ### Frontend
 
-Create test files in `apps/web/app/**/__tests__/` with the `.test.ts` or `.test.tsx` extension.
+Create test files in `apps/games/sanasto/app/**/__tests__/` with the `.test.ts` or `.test.tsx` extension.
 
 ### Backend
 
