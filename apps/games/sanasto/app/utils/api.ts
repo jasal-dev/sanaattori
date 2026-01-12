@@ -12,11 +12,15 @@ function getApiBaseUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
-  // If running in the browser, use the current hostname with port 8000
+  // If running in the browser, use the current hostname with /api path
+  // This works with the nginx reverse proxy setup
   if (typeof window !== 'undefined') {
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
-    return `${protocol}//${hostname}:8000`;
+    const port = window.location.port;
+    // Use the same host:port as the current page, with /api path
+    const baseUrl = port ? `${protocol}//${hostname}:${port}` : `${protocol}//${hostname}`;
+    return `${baseUrl}/api`;
   }
 
   // Fall back to localhost for server-side rendering

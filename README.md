@@ -1,10 +1,11 @@
 # Sanaattori
 
-Finnish Wordle-style word game built with Next.js and FastAPI.
+Collection of Finnish word games built with Next.js and FastAPI.
 
 ## Project Structure
 
-- `apps/web` - Next.js frontend (TypeScript + Tailwind CSS)
+- `apps/landing` - Landing page for game selection (Next.js)
+- `apps/games/sanasto` - Sanasto word game (Next.js frontend with TypeScript + Tailwind CSS)
 - `apps/api` - FastAPI backend
 - `data/` - Word lists (raw and processed)
 - `scripts/` - Build scripts for word list generation
@@ -36,20 +37,26 @@ Finnish Wordle-style word game built with Next.js and FastAPI.
 
 ### Running the Application
 
-Start both frontend and backend:
+Start all services:
 ```bash
 npm run dev
 ```
 
 This will start:
-- Frontend: http://localhost:3000
+- Landing page: http://localhost:3001
+- Sanasto game: http://localhost:3002
 - Backend: http://localhost:8000
 
 ### Individual Services
 
-Frontend only:
+Landing page only:
 ```bash
-npm run dev:web
+npm run dev:landing
+```
+
+Sanasto game only:
+```bash
+npm run dev:sanasto
 ```
 
 Backend only:
@@ -86,17 +93,26 @@ npm run lint
    ```
 
    This will start:
-   - PostgreSQL database on port 5432
-   - FastAPI backend on http://localhost:8000
-   - Next.js frontend on http://localhost:3000
+   - PostgreSQL database on port 5432 (internal)
+   - FastAPI backend (internal)
+   - Landing page (internal)
+   - Sanasto game (internal)
+   - Nginx reverse proxy on http://localhost:8080
+
+   The application is accessible at:
+   - Main site: http://localhost:8080
+   - Sanasto game: http://localhost:8080/sanasto
+   - API: http://localhost:8080/api
 
 4. View logs:
    ```bash
    docker-compose logs -f
    
    # Or for a specific service
-   docker-compose logs -f web
+   docker-compose logs -f landing
+   docker-compose logs -f sanasto
    docker-compose logs -f api
+   docker-compose logs -f nginx
    ```
 
 5. Stop the services:
@@ -115,8 +131,8 @@ npm run lint
 # Backend tests
 docker-compose exec api pytest
 
-# Frontend tests
-docker-compose exec web npm test
+# Sanasto game tests
+docker-compose exec sanasto npm test
 ```
 
 ## License

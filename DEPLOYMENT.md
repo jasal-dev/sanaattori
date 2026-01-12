@@ -14,8 +14,10 @@ This guide explains how to deploy the Sanaattori application behind Caddy as a r
 ## Deployment Architecture
 
 ```
-Internet → Caddy (HTTPS, Port 443) → FastAPI (Port 8000)
-                                   → PostgreSQL (Port 5432, internal only)
+Internet → Caddy (HTTPS, Port 443) → Nginx (Port 3000) → Landing Page (Port 3001)
+                                                         → Sanasto Game (Port 3002)
+                                                         → FastAPI (Port 8000)
+                                                         → PostgreSQL (Port 5432, internal only)
 ```
 
 ## Step 1: Install Caddy
@@ -125,14 +127,51 @@ services:
       ENVIRONMENT: production
     volumes:
       - ./data:/data
-    ports:
-      - "127.0.0.1:8000:8000"  # Only expose on localhost
+    networks:
+      - sanaattori-network
     depends_on:
       - db
+    restart: unless-stopped
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+
+  landing:
+    build:
+      context: ./apps/landing
+      dockerfile: Dockerfile
+    container_name: sanaattori-landing
+    environment:
+      - NODE_ENV=production
     networks:
       - sanaattori-network
     restart: unless-stopped
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+    command: npm run start
+
+  sanasto:
+    build:
+      context: ./apps/games/sanasto
+      dockerfile: Dockerfile
+    container_name: sanaattori-sanasto
+    environment:
+      - NODE_ENV=production
+    networks:
+      - sanaattori-network
+    depends_on:
+      - api
+    restart: unless-stopped
+    command: npm run start
+
+  nginx:
+    image: nginx:alpine
+    container_name: sanaattori-nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - sanaattori-network
+    depends_on:
+      - landing
+      - sanasto
+      - api
+    restart: unless-stopped
 
 volumes:
   postgres_data:
@@ -169,10 +208,9 @@ yourdomain.com {
     # Automatic HTTPS
     # Caddy will automatically obtain and renew Let's Encrypt certificates
 
-    # Reverse proxy to FastAPI backend
-    reverse_proxy localhost:8000 {
+    # Reverse proxy to Nginx
+    reverse_proxy nginx:80 {
         # Health check
-        health_uri /health
         health_interval 30s
         health_timeout 5s
     }
@@ -200,19 +238,12 @@ yourdomain.com {
 
 ### Advanced Configuration (with Frontend)
 
-If you're also serving a Next.js frontend:
+The application already uses Nginx internally for routing. Caddy should proxy to the Nginx container:
 
 ```caddy
 yourdomain.com {
-    # Frontend (Next.js static files or running Next.js server)
-    handle /api/* {
-        reverse_proxy localhost:8000
-    }
-
-    handle {
-        # Serve frontend or proxy to Next.js dev server
-        reverse_proxy localhost:3000
-    }
+    # Reverse proxy to Nginx (which handles routing to all services)
+    reverse_proxy nginx:80
 
     # Logging
     log {
@@ -255,7 +286,7 @@ sudo systemctl status caddy
 2. **Check application health:**
 
 ```bash
-curl https://yourdomain.com/health
+curl https://yourdomain.com/api/health
 ```
 
 Expected response:
@@ -265,7 +296,7 @@ Expected response:
 
 3. **Test HTTPS:**
 
-Visit `https://yourdomain.com` in your browser. You should see a valid SSL certificate from Let's Encrypt.
+Visit `https://yourdomain.com` in your browser. You should see the Sanaattori landing page with a valid SSL certificate from Let's Encrypt.
 
 4. **Check logs:**
 
