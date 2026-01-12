@@ -97,12 +97,12 @@ npm run lint
    - FastAPI backend (internal)
    - Landing page (internal)
    - Sanasto game (internal)
-   - Nginx reverse proxy on http://localhost:3000
+   - Nginx reverse proxy on http://localhost:8080
 
    The application is accessible at:
-   - Main site: http://localhost:3000
-   - Sanasto game: http://localhost:3000/sanasto
-   - API: http://localhost:3000/api
+   - Main site: http://localhost:8080
+   - Sanasto game: http://localhost:8080/sanasto
+   - API: http://localhost:8080/api
 
 4. View logs:
    ```bash
