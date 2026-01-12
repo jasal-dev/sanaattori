@@ -1,66 +1,66 @@
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <div className="max-w-4xl mx-auto px-4 py-16">
-        <header className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
+    <div className="container">
+      <div className="content">
+        <header className="header">
+          <h1 className="title">
             Sanaattori
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300">
+          <p className="subtitle">
             Collection of Finnish Word Games
           </p>
         </header>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="games-grid">
           {/* Sanasto Game Card */}
           <a
             href="/sanasto"
-            className="group block bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-shadow p-8 border-2 border-transparent hover:border-blue-500"
+            className="game-card"
           >
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-blue-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-3xl font-bold text-white">S</span>
+            <div className="game-card-content">
+              <div className="game-icon">
+                <span className="game-icon-text">S</span>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              <h2 className="game-title">
                 Sanasto
               </h2>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="game-description">
                 A Wordle-style word guessing game in Finnish
               </p>
             </div>
           </a>
 
           {/* Placeholder for future games */}
-          <div className="block bg-gray-100 dark:bg-gray-700 rounded-lg shadow p-8 border-2 border-dashed border-gray-300 dark:border-gray-600">
-            <div className="flex flex-col items-center text-center opacity-50">
-              <div className="w-16 h-16 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-3xl font-bold text-gray-500 dark:text-gray-400">?</span>
+          <div className="game-card placeholder-card">
+            <div className="game-card-content">
+              <div className="game-icon placeholder-icon">
+                <span className="game-icon-text placeholder-icon-text">?</span>
               </div>
-              <h2 className="text-2xl font-bold text-gray-500 dark:text-gray-400 mb-2">
+              <h2 className="game-title placeholder-title">
                 Coming Soon
               </h2>
-              <p className="text-gray-500 dark:text-gray-400">
+              <p className="game-description placeholder-description">
                 More word games coming soon!
               </p>
             </div>
           </div>
 
-          <div className="block bg-gray-100 dark:bg-gray-700 rounded-lg shadow p-8 border-2 border-dashed border-gray-300 dark:border-gray-600">
-            <div className="flex flex-col items-center text-center opacity-50">
-              <div className="w-16 h-16 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-3xl font-bold text-gray-500 dark:text-gray-400">?</span>
+          <div className="game-card placeholder-card">
+            <div className="game-card-content">
+              <div className="game-icon placeholder-icon">
+                <span className="game-icon-text placeholder-icon-text">?</span>
               </div>
-              <h2 className="text-2xl font-bold text-gray-500 dark:text-gray-400 mb-2">
+              <h2 className="game-title placeholder-title">
                 Coming Soon
               </h2>
-              <p className="text-gray-500 dark:text-gray-400">
+              <p className="game-description placeholder-description">
                 More word games coming soon!
               </p>
             </div>
           </div>
         </div>
 
-        <footer className="mt-16 text-center text-gray-600 dark:text-gray-400">
+        <footer className="footer">
           <p>Enjoy our collection of Finnish word games!</p>
         </footer>
       </div>
