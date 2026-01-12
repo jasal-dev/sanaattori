@@ -3,16 +3,22 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "apps/web"
+    "apps/landing",
+    "apps/games/sanasto"
   ],
   "scripts": {
     "dev": "npm-run-all --parallel dev:*",
-    "dev:web": "cd apps/web && npm run dev",
+    "dev:landing": "cd apps/landing && npm run dev",
+    "dev:sanasto": "cd apps/games/sanasto && npm run dev",
     "dev:api": "cd apps/api && source venv/bin/activate && uvicorn main:app --reload --host 0.0.0.0 --port 8000",
-    "build": "cd apps/web && npm run build",
-    "lint": "cd apps/web && npm run lint",
+    "build": "npm-run-all build:*",
+    "build:landing": "cd apps/landing && npm run build",
+    "build:sanasto": "cd apps/games/sanasto && npm run build",
+    "lint": "npm-run-all lint:*",
+    "lint:landing": "cd apps/landing && npm run lint",
+    "lint:sanasto": "cd apps/games/sanasto && npm run lint",
     "test": "npm-run-all test:*",
-    "test:web": "cd apps/web && npm test",
+    "test:sanasto": "cd apps/games/sanasto && npm test",
     "test:api": "cd apps/api && source venv/bin/activate && pytest"
   },
   "devDependencies": {

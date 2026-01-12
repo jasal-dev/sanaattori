@@ -14,7 +14,7 @@ export default function Header() {
       <header className="border-b border-gray-300 dark:border-gray-700">
         <div className="max-w-screen-sm mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex-1"></div>
-          <h1 className="text-2xl font-bold tracking-wide">SANAATTORI</h1>
+          <h1 className="text-2xl font-bold tracking-wide">SANASTO</h1>
           <div className="flex-1 flex items-center justify-end gap-2">
             <LanguageSwitcher />
             <button
