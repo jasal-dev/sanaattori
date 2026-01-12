@@ -19,7 +19,9 @@
     "lint:sanasto": "cd apps/games/sanasto && npm run lint",
     "test": "npm-run-all test:*",
     "test:sanasto": "cd apps/games/sanasto && npm test",
-    "test:api": "cd apps/api && source venv/bin/activate && pytest"
+    "test:api": "cd apps/api && source venv/bin/activate && pytest",
+    "test:e2e": "./run-e2e-tests.sh",
+    "test:e2e:ui": "cd e2e-tests && npm install && npx playwright test --ui"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5"
