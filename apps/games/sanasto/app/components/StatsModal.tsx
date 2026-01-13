@@ -117,7 +117,7 @@ export default function StatsModal({ isOpen, onClose }: StatsModalProps) {
 
         {isAuthenticated && (
           <div className="mb-4 p-3 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-lg text-center text-sm">
-            {t('backendStats') || 'Statistics synced from your account'}
+            Statistics synced from your account
           </div>
         )}
 
