@@ -88,7 +88,7 @@ class LogoutResponse(BaseModel):
 
 
 class SubmitGameResultRequest(BaseModel):
-    score: int = Field(..., gt=0)
+    score: int = Field(..., ge=0)
 
 
 class GameResultResponse(BaseModel):
@@ -489,6 +489,8 @@ async def get_user_game_history(
     - page: Page number (default: 1)
     - per_page: Results per page (default: 20, max: 100)
     """
+    from sqlalchemy import func
+    
     # Validate pagination parameters
     page = max(1, page)
     per_page = min(max(1, per_page), 100)

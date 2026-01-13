@@ -309,7 +309,7 @@ paths:
               properties:
                 score:
                   type: integer
-                  minimum: 1
+                  minimum: 0
                   description: Game score (1-6 for win, 0 or >6 for loss)
                   example: 3
       responses:

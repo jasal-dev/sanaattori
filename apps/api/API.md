@@ -194,7 +194,8 @@ Submit a game result (requires authentication).
 **Notes:**
 - Only authenticated users can submit scores
 - `played_at` is automatically set to current timestamp
-- Score must be a positive integer
+- Score must be a non-negative integer (0 or greater)
+- Score interpretation: 1-6 = win (won in that many guesses), 0 or >6 = loss
 - No client-side validation of score authenticity (see Score Payload Documentation)
 
 ---
