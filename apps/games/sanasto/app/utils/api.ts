@@ -148,3 +148,161 @@ async function getFallbackWord(wordLength: number): Promise<string> {
     return fallbacks[wordLength] || 'omena';
   }
 }
+
+// ==================== Authentication Endpoints ====================
+
+export interface RegisterRequest {
+  username: string;
+  password: string;
+}
+
+export interface RegisterResponse {
+  id: number;
+  username: string;
+  created_at: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  message: string;
+  user: {
+    id: number;
+    username: string;
+  };
+}
+
+export interface UserProfile {
+  id: number;
+  username: string;
+  created_at: string;
+}
+
+export interface UserStats {
+  played: number;
+  won: number;
+  lost: number;
+  winRate: number;
+  currentStreak: number;
+  maxStreak: number;
+}
+
+export interface GameResult {
+  id: number;
+  user_id: number;
+  score: number;
+  played_at: string;
+}
+
+export interface GameHistory {
+  games: GameResult[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+export async function register(username: string, password: string): Promise<RegisterResponse> {
+  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Important: Include cookies
+    body: JSON.stringify({ username, password } as RegisterRequest),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Registration failed');
+  }
+
+  return response.json();
+}
+
+export async function login(username: string, password: string): Promise<LoginResponse> {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Important: Include cookies
+    body: JSON.stringify({ username, password } as LoginRequest),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Login failed');
+  }
+
+  return response.json();
+}
+
+export async function logout(): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+    method: 'POST',
+    credentials: 'include', // Important: Include cookies
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Logout failed');
+  }
+}
+
+export async function getCurrentUser(): Promise<UserProfile | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: 'GET',
+      credentials: 'include', // Important: Include cookies
+    });
+
+    if (!response.ok) {
+      return null; // Not authenticated
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching current user:', error);
+    return null;
+  }
+}
+
+export async function getUserStats(): Promise<UserStats | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/stats/me`, {
+      method: 'GET',
+      credentials: 'include', // Important: Include cookies
+    });
+
+    if (!response.ok) {
+      return null; // Not authenticated or error
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    return null;
+  }
+}
+
+export async function getUserGameHistory(page: number = 1, perPage: number = 20): Promise<GameHistory | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/games/me?page=${page}&per_page=${perPage}`, {
+      method: 'GET',
+      credentials: 'include', // Important: Include cookies
+    });
+
+    if (!response.ok) {
+      return null; // Not authenticated or error
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching game history:', error);
+    return null;
+  }
+}
+

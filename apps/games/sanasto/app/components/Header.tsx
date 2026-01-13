@@ -4,10 +4,33 @@ import { useState } from 'react';
 import SettingsModal from './SettingsModal';
 import StatsModal from './StatsModal';
 import LanguageSwitcher from './LanguageSwitcher';
+import AuthModal from './AuthModal';
+import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
   const [showSettings, setShowSettings] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const { user, isAuthenticated, logout } = useAuth();
+
+  const handleLoginClick = () => {
+    setAuthMode('login');
+    setShowAuth(true);
+  };
+
+  const handleRegisterClick = () => {
+    setAuthMode('register');
+    setShowAuth(true);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   return (
     <>
@@ -16,6 +39,37 @@ export default function Header() {
           <div className="flex-1"></div>
           <h1 className="text-2xl font-bold tracking-wide">SANASTO</h1>
           <div className="flex-1 flex items-center justify-end gap-2">
+            {isAuthenticated ? (
+              <>
+                <div className="text-sm text-gray-700 dark:text-gray-300 mr-2">
+                  {user?.username}
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded"
+                  aria-label="Logout"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleLoginClick}
+                  className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded"
+                  aria-label="Login"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={handleRegisterClick}
+                  className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 text-white rounded"
+                  aria-label="Register"
+                >
+                  Register
+                </button>
+              </>
+            )}
             <LanguageSwitcher />
             <button
               onClick={() => setShowSettings(true)}
@@ -69,6 +123,7 @@ export default function Header() {
       
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <StatsModal isOpen={showStats} onClose={() => setShowStats(false)} />
+      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} initialMode={authMode} />
     </>
   );
 }
