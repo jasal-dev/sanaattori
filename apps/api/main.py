@@ -18,6 +18,17 @@ app = FastAPI()
 # Get environment
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
+
+def safe_isoformat(dt: datetime) -> str:
+    """
+    Safely convert datetime to ISO format string.
+    Handles both timezone-aware and naive datetimes.
+    """
+    if dt.tzinfo is None:
+        # Naive datetime - assume UTC
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
+
 # Configure CORS
 # Allow requests from frontend origins with credentials
 if ENVIRONMENT == "production":
@@ -303,7 +314,7 @@ async def register(request: RegisterRequest, db: DBSession = Depends(get_db)):
     return RegisterResponse(
         id=user.id,
         username=user.username,
-        created_at=user.created_at.isoformat()
+        created_at=safe_isoformat(user.created_at)
     )
 
 
@@ -380,7 +391,7 @@ async def get_current_user_profile(
     return UserProfileResponse(
         id=current_user.id,
         username=current_user.username,
-        created_at=current_user.created_at.isoformat()
+        created_at=safe_isoformat(current_user.created_at)
     )
 
 
@@ -409,7 +420,7 @@ async def submit_game_result(
         id=game_result.id,
         user_id=game_result.user_id,
         score=game_result.score,
-        played_at=game_result.played_at.isoformat()
+        played_at=safe_isoformat(game_result.played_at)
     )
 
 
@@ -512,7 +523,7 @@ async def get_user_game_history(
             id=game.id,
             user_id=game.user_id,
             score=game.score,
-            played_at=game.played_at.isoformat()
+            played_at=safe_isoformat(game.played_at)
         )
         for game in games
     ]

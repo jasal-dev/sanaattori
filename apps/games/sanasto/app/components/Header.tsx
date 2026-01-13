@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SettingsModal from './SettingsModal';
 import StatsModal from './StatsModal';
 import LanguageSwitcher from './LanguageSwitcher';
 import AuthModal from './AuthModal';
 import { useAuth } from '../context/AuthContext';
+import { useModal } from '../context/ModalContext';
 
 export default function Header() {
   const [showSettings, setShowSettings] = useState(false);
@@ -13,6 +14,12 @@ export default function Header() {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const { user, isAuthenticated, logout } = useAuth();
+  const { setModalOpen } = useModal();
+
+  // Update modal context whenever any modal state changes
+  useEffect(() => {
+    setModalOpen(showSettings || showStats || showAuth);
+  }, [showSettings, showStats, showAuth, setModalOpen]);
 
   const handleLoginClick = () => {
     setAuthMode('login');
