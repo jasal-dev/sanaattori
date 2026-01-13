@@ -2,6 +2,9 @@
 
 This document defines the API contracts for the Sanaattori backend.
 
+> **OpenAPI Specification**: For a complete, machine-readable API specification, see [openapi.yaml](./openapi.yaml).
+> This file can be used with tools like Swagger UI, Postman, or API client generators.
+
 ## Authentication Endpoints
 
 ### POST /auth/register
