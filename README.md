@@ -125,6 +125,31 @@ npm run lint
    docker-compose down -v
    ```
 
+### Updating After Git Pull
+
+When you pull new code changes, Docker needs to rebuild to pick up the changes:
+
+```bash
+# 1. Stop containers
+docker-compose down
+
+# 2. Pull latest changes
+git pull
+
+# 3. Rebuild containers (important!)
+docker-compose build --no-cache
+
+# 4. Start containers
+docker-compose up -d
+```
+
+**Quick restart** (only if no new dependencies or files were added):
+```bash
+docker-compose restart
+```
+
+For more details, see [DEPLOYMENT.md](./DEPLOYMENT.md#updating-the-application).
+
 ### Running Tests in Docker
 
 ```bash

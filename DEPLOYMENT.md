@@ -477,3 +477,114 @@ sudo docker-compose -f docker-compose.prod.yml exec api alembic current
 # Run migrations
 sudo docker-compose -f docker-compose.prod.yml exec api alembic upgrade head
 ```
+
+## Updating the Application
+
+When pulling new code changes from git, follow these steps to ensure all changes are applied:
+
+### Development Environment
+
+```bash
+# 1. Stop all containers
+docker-compose down
+
+# 2. Pull latest changes
+git pull origin main  # or your branch name
+
+# 3. Rebuild containers (important for code changes)
+docker-compose build --no-cache
+
+# 4. Start containers
+docker-compose up -d
+
+# 5. Verify services are running
+docker-compose ps
+docker-compose logs -f sanasto  # Watch frontend logs
+docker-compose logs api         # Check API logs
+```
+
+### Why Rebuild is Needed
+
+- **Code changes**: New Python or TypeScript files need to be bundled
+- **Dependencies**: New npm or pip packages need to be installed
+- **Environment changes**: New environment variables or configurations
+- **Database schema**: May require migrations
+
+### Quick Restart (for minor changes)
+
+If you only changed files that are volume-mounted and have hot-reload enabled:
+
+```bash
+# Restart specific services
+docker-compose restart api sanasto
+
+# Or restart all services
+docker-compose restart
+```
+
+**Note**: This only works if:
+- No new dependencies were added
+- No new files were created (only existing files modified)
+- No database schema changes
+
+### Production Environment
+
+```bash
+# 1. Stop containers gracefully
+sudo docker-compose -f docker-compose.prod.yml down
+
+# 2. Pull latest changes
+git pull origin main
+
+# 3. Rebuild with no cache
+sudo docker-compose -f docker-compose.prod.yml build --no-cache
+
+# 4. Run database migrations (if any)
+sudo docker-compose -f docker-compose.prod.yml run --rm api alembic upgrade head
+
+# 5. Start services
+sudo docker-compose -f docker-compose.prod.yml up -d
+
+# 6. Verify everything is running
+sudo docker-compose -f docker-compose.prod.yml ps
+sudo docker-compose -f docker-compose.prod.yml logs --tail=100
+```
+
+### Troubleshooting Updates
+
+**Issue: Changes not appearing after `git pull` and `docker-compose up -d`**
+
+Solution: You must rebuild the containers:
+```bash
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+**Issue: Frontend shows old code**
+
+Solution: Clear Next.js cache and rebuild:
+```bash
+docker-compose down
+docker-compose build --no-cache sanasto
+docker-compose up -d
+```
+
+**Issue: API returns 500 errors after update**
+
+Check logs and rebuild:
+```bash
+docker-compose logs api
+docker-compose build --no-cache api
+docker-compose up -d
+```
+
+**Issue: Database errors after update**
+
+Run migrations:
+```bash
+# Development
+docker-compose exec api alembic upgrade head
+
+# Production
+sudo docker-compose -f docker-compose.prod.yml exec api alembic upgrade head
+```
