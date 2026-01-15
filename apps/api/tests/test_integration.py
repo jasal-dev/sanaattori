@@ -251,13 +251,15 @@ class TestGameResults:
         )
         assert response.status_code == 422
     
-    def test_submit_zero_score_rejected(self, logged_in_client):
-        """Test that zero score is rejected."""
+    def test_submit_zero_score_accepted(self, logged_in_client):
+        """Test that zero score is accepted (represents a loss)."""
         response = logged_in_client.post(
             "/games/submit",
             json={"score": 0}
         )
-        assert response.status_code == 422
+        assert response.status_code == 201
+        data = response.json()
+        assert data["score"] == 0
 
 
 # ==================== Leaderboard Tests ====================
@@ -467,3 +469,210 @@ class TestWeeklyLeaderboardWindow:
         end = datetime.fromisoformat(data["end_date"])
         diff = end - start
         assert 6 <= diff.days <= 7  # Should be approximately 7 days
+
+
+# ==================== New Endpoint Tests ====================
+
+class TestAuthMe:
+    """Test /auth/me endpoint for current user profile."""
+    
+    def test_get_current_user_authenticated(self, logged_in_client):
+        """Test getting current user profile when authenticated."""
+        response = logged_in_client.get("/auth/me")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["username"] == "testuser"
+        assert "id" in data
+        assert "created_at" in data
+        assert "password" not in data
+    
+    def test_get_current_user_unauthenticated(self, client):
+        """Test that unauthenticated request returns 401."""
+        response = client.get("/auth/me")
+        assert response.status_code == 401
+        assert "not authenticated" in response.json()["detail"].lower()
+
+
+class TestStatsMe:
+    """Test /stats/me endpoint for user statistics."""
+    
+    def test_stats_no_games(self, logged_in_client):
+        """Test stats for user with no games."""
+        response = logged_in_client.get("/stats/me")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["played"] == 0
+        assert data["won"] == 0
+        assert data["lost"] == 0
+        assert data["winRate"] == 0.0
+        assert data["currentStreak"] == 0
+        assert data["maxStreak"] == 0
+    
+    def test_stats_with_wins(self, logged_in_client):
+        """Test stats calculation with wins (score 1-6)."""
+        # Submit 5 winning games
+        for score in [3, 4, 2, 5, 3]:
+            logged_in_client.post("/games/submit", json={"score": score})
+        
+        response = logged_in_client.get("/stats/me")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["played"] == 5
+        assert data["won"] == 5
+        assert data["lost"] == 0
+        assert data["winRate"] == 100.0
+        assert data["currentStreak"] == 5
+        assert data["maxStreak"] == 5
+    
+    def test_stats_with_losses(self, logged_in_client):
+        """Test stats calculation with losses (score 0 or >6)."""
+        # Submit 3 losing games (score 0 or >6)
+        for score in [0, 7, 0]:
+            logged_in_client.post("/games/submit", json={"score": score})
+        
+        response = logged_in_client.get("/stats/me")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["played"] == 3
+        assert data["won"] == 0
+        assert data["lost"] == 3
+        assert data["winRate"] == 0.0
+        assert data["currentStreak"] == 0
+        assert data["maxStreak"] == 0
+    
+    def test_stats_mixed_results(self, logged_in_client):
+        """Test stats with mixed wins and losses."""
+        # Submit: W, W, L, W, L, W (score order)
+        scores = [3, 4, 0, 2, 7, 5]
+        for score in scores:
+            logged_in_client.post("/games/submit", json={"score": score})
+        
+        response = logged_in_client.get("/stats/me")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["played"] == 6
+        assert data["won"] == 4
+        assert data["lost"] == 2
+        assert data["winRate"] == pytest.approx(66.67, rel=0.01)
+        assert data["currentStreak"] == 1  # Last game was a win
+        assert data["maxStreak"] == 2  # First two games were wins
+    
+    def test_stats_streak_calculation(self, logged_in_client):
+        """Test that current and max streak are calculated correctly."""
+        # Submit: W, W, W, L, W, W
+        scores = [3, 4, 5, 0, 2, 3]
+        for score in scores:
+            logged_in_client.post("/games/submit", json={"score": score})
+        
+        response = logged_in_client.get("/stats/me")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["currentStreak"] == 2  # Last two games
+        assert data["maxStreak"] == 3  # First three games
+    
+    def test_stats_unauthenticated(self, client):
+        """Test that unauthenticated request returns 401."""
+        response = client.get("/stats/me")
+        assert response.status_code == 401
+
+
+class TestGamesMe:
+    """Test /games/me endpoint for user game history."""
+    
+    def test_game_history_empty(self, logged_in_client):
+        """Test game history for user with no games."""
+        response = logged_in_client.get("/games/me")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["games"] == []
+        assert data["total"] == 0
+        assert data["page"] == 1
+        assert data["per_page"] == 20
+    
+    def test_game_history_with_games(self, logged_in_client):
+        """Test game history with multiple games."""
+        # Submit 3 games
+        scores = [3, 5, 2]
+        for score in scores:
+            logged_in_client.post("/games/submit", json={"score": score})
+        
+        response = logged_in_client.get("/games/me")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["games"]) == 3
+        assert data["total"] == 3
+        assert data["page"] == 1
+        assert data["per_page"] == 20
+        
+        # Check games are ordered by played_at descending (most recent first)
+        # The last submitted game should be first
+        assert data["games"][0]["score"] == 2
+        assert data["games"][1]["score"] == 5
+        assert data["games"][2]["score"] == 3
+    
+    def test_game_history_pagination(self, logged_in_client):
+        """Test pagination parameters."""
+        # Submit 25 games
+        for i in range(25):
+            logged_in_client.post("/games/submit", json={"score": i % 6 + 1})
+        
+        # Get first page with 10 per page
+        response = logged_in_client.get("/games/me?page=1&per_page=10")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["games"]) == 10
+        assert data["total"] == 25
+        assert data["page"] == 1
+        assert data["per_page"] == 10
+        
+        # Get second page
+        response = logged_in_client.get("/games/me?page=2&per_page=10")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["games"]) == 10
+        assert data["page"] == 2
+        
+        # Get third page (should have 5 items)
+        response = logged_in_client.get("/games/me?page=3&per_page=10")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["games"]) == 5
+    
+    def test_game_history_max_per_page(self, logged_in_client):
+        """Test that per_page is capped at 100."""
+        # Submit a few games
+        for i in range(5):
+            logged_in_client.post("/games/submit", json={"score": 3})
+        
+        # Request with per_page > 100 should be capped
+        response = logged_in_client.get("/games/me?per_page=200")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["per_page"] == 100  # Should be capped at 100
+    
+    def test_game_history_unauthenticated(self, client):
+        """Test that unauthenticated request returns 401."""
+        response = client.get("/games/me")
+        assert response.status_code == 401
+    
+    def test_game_history_only_users_games(self, client):
+        """Test that users only see their own games."""
+        # Register and login as user1
+        client.post("/auth/register", json={"username": "user1", "password": "pass123456"})
+        client.post("/auth/login", json={"username": "user1", "password": "pass123456"})
+        client.post("/games/submit", json={"score": 3})
+        client.post("/games/submit", json={"score": 4})
+        
+        # Register and login as user2
+        client.post("/auth/register", json={"username": "user2", "password": "pass123456"})
+        client.post("/auth/login", json={"username": "user2", "password": "pass123456"})
+        client.post("/games/submit", json={"score": 5})
+        
+        # User2 should only see their own game
+        response = client.get("/games/me")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["games"]) == 1
+        assert data["total"] == 1
+        assert data["games"][0]["score"] == 5
+

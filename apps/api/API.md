@@ -2,6 +2,9 @@
 
 This document defines the API contracts for the Sanaattori backend.
 
+> **OpenAPI Specification**: For a complete, machine-readable API specification, see [openapi.yaml](./openapi.yaml).
+> This file can be used with tools like Swagger UI, Postman, or API client generators.
+
 ## Authentication Endpoints
 
 ### POST /auth/register
@@ -129,6 +132,35 @@ session_token=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/
 
 ---
 
+### GET /auth/me
+
+Get the current authenticated user's profile information.
+
+**Request:**
+No body required. Session token provided via cookie.
+
+**Response (Success - 200 OK):**
+```json
+{
+  "id": 1,
+  "username": "player123",
+  "created_at": "2026-01-08T15:00:00Z"
+}
+```
+
+**Response (Unauthenticated - 401 Unauthorized):**
+```json
+{
+  "detail": "Not authenticated"
+}
+```
+
+**Notes:**
+- Requires valid session cookie
+- Returns basic user profile information
+
+---
+
 ## Game Endpoints
 
 ### POST /games/submit
@@ -162,8 +194,100 @@ Submit a game result (requires authentication).
 **Notes:**
 - Only authenticated users can submit scores
 - `played_at` is automatically set to current timestamp
-- Score must be a positive integer
+- Score must be a non-negative integer (0 or greater)
+- Score interpretation: 1-6 = win (won in that many guesses), 0 or >6 = loss
 - No client-side validation of score authenticity (see Score Payload Documentation)
+
+---
+
+### GET /stats/me
+
+Get statistics for the current authenticated user.
+
+**Request:**
+No body required. Session token provided via cookie.
+
+**Response (Success - 200 OK):**
+```json
+{
+  "played": 42,
+  "won": 35,
+  "lost": 7,
+  "winRate": 83.33,
+  "currentStreak": 5,
+  "maxStreak": 12
+}
+```
+
+**Response (Unauthenticated - 401 Unauthorized):**
+```json
+{
+  "detail": "Not authenticated"
+}
+```
+
+**Notes:**
+- Requires valid session cookie
+- Statistics are calculated from the user's game results
+- Win/loss determination:
+  - Score 1-6: Win (won in that many guesses)
+  - Score 0 or > 6: Loss
+- `winRate`: Percentage of games won (0-100)
+- `currentStreak`: Current consecutive wins
+- `maxStreak`: Maximum consecutive wins achieved
+
+---
+
+### GET /games/me
+
+Get game history for the current authenticated user.
+
+**Query Parameters:**
+- `page` (optional, default: 1): Page number for pagination
+- `per_page` (optional, default: 20, max: 100): Results per page
+
+**Request Example:**
+```
+GET /games/me?page=1&per_page=20
+```
+
+**Response (Success - 200 OK):**
+```json
+{
+  "games": [
+    {
+      "id": 42,
+      "user_id": 1,
+      "score": 3,
+      "played_at": "2026-01-13T15:30:00Z"
+    },
+    {
+      "id": 41,
+      "user_id": 1,
+      "score": 5,
+      "played_at": "2026-01-13T14:15:00Z"
+    }
+  ],
+  "total": 42,
+  "page": 1,
+  "per_page": 20
+}
+```
+
+**Response (Unauthenticated - 401 Unauthorized):**
+```json
+{
+  "detail": "Not authenticated"
+}
+```
+
+**Notes:**
+- Requires valid session cookie
+- Returns paginated list of all game results for the logged-in user
+- Results are ordered by `played_at` (most recent first)
+- `total`: Total number of games played by the user
+- `page`: Current page number
+- `per_page`: Number of results per page
 
 ---
 

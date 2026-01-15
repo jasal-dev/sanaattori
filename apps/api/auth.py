@@ -93,8 +93,8 @@ def create_session(db: Session, user_id: int, expires_in_seconds: int = 604800) 
     """
     token = generate_session_token()
     token_hash = hash_token(token)
-    # Use naive datetime for SQLite compatibility
-    expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=expires_in_seconds)
+    # Use timezone-aware datetime for PostgreSQL compatibility
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in_seconds)
     
     session = SessionModel(
         user_id=user_id,
@@ -120,10 +120,17 @@ def validate_session(db: Session, token: str) -> Optional[User]:
     if not session:
         return None
     
-    # Check if session is expired (use naive datetime for consistency)
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    # Check if session is expired
+    # Handle both timezone-aware (PostgreSQL) and naive (SQLite) datetimes
+    now = datetime.now(timezone.utc)
+    expires_at = session.expires_at
     
-    if session.expires_at < now:
+    # Ensure both datetimes are timezone-aware for comparison
+    if expires_at.tzinfo is None:
+        # SQLite returns naive datetime - assume it's UTC
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    if expires_at < now:
         # Clean up expired session
         db.delete(session)
         db.commit()
@@ -157,11 +164,21 @@ def cleanup_expired_sessions(db: Session) -> int:
     
     Returns the number of sessions deleted.
     """
-    # Use naive datetime for consistency
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    # Get all sessions
+    sessions = db.query(SessionModel).all()
+    now = datetime.now(timezone.utc)
+    count = 0
     
-    count = db.query(SessionModel).filter(
-        SessionModel.expires_at < now
-    ).delete()
+    for session in sessions:
+        expires_at = session.expires_at
+        
+        # Ensure timezone-aware for comparison (SQLite compatibility)
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+        if expires_at < now:
+            db.delete(session)
+            count += 1
+    
     db.commit()
     return count

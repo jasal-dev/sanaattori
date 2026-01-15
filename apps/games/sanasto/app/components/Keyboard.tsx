@@ -2,10 +2,12 @@
 
 import { useEffect } from 'react';
 import { useGame } from '../context/GameContext';
+import { useModal } from '../context/ModalContext';
 
 export default function Keyboard() {
   const { gameState, addLetter, removeLetter, submitGuess, setSelectedBoxIndex } = useGame();
   const { revealedLetters, gameStatus, selectedBoxIndex, currentGuess, settings } = gameState;
+  const { isAnyModalOpen } = useModal();
 
   const rows = [
     ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Å'],
@@ -47,7 +49,8 @@ export default function Keyboard() {
   // Handle physical keyboard input
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (gameStatus !== 'playing') return;
+      // Don't handle keyboard input if a modal is open or game is not playing
+      if (isAnyModalOpen || gameStatus !== 'playing') return;
 
       if (e.key === 'Enter') {
         submitGuess();
@@ -77,7 +80,7 @@ export default function Keyboard() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameStatus, submitGuess, removeLetter, addLetter, selectedBoxIndex, currentGuess, settings.wordLength, setSelectedBoxIndex]);
+  }, [isAnyModalOpen, gameStatus, submitGuess, removeLetter, addLetter, selectedBoxIndex, currentGuess, settings.wordLength, setSelectedBoxIndex]);
 
   return (
     <div className="w-full max-w-screen-sm mx-auto px-2 pb-4">

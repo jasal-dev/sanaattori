@@ -18,6 +18,17 @@ app = FastAPI()
 # Get environment
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
+
+def safe_isoformat(dt: datetime) -> str:
+    """
+    Safely convert datetime to ISO format string.
+    Handles both timezone-aware and naive datetimes.
+    """
+    if dt.tzinfo is None:
+        # Naive datetime - assume UTC
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
+
 # Configure CORS
 # Allow requests from frontend origins with credentials
 if ENVIRONMENT == "production":
@@ -88,7 +99,7 @@ class LogoutResponse(BaseModel):
 
 
 class SubmitGameResultRequest(BaseModel):
-    score: int = Field(..., gt=0)
+    score: int = Field(..., ge=0)
 
 
 class GameResultResponse(BaseModel):
@@ -115,6 +126,28 @@ class WeeklyLeaderboardResponse(BaseModel):
 class AllTimeLeaderboardResponse(BaseModel):
     period: str
     leaderboard: List[LeaderboardEntry]
+
+
+class UserProfileResponse(BaseModel):
+    id: int
+    username: str
+    created_at: str
+
+
+class UserStatsResponse(BaseModel):
+    played: int
+    won: int
+    lost: int
+    winRate: float
+    currentStreak: int
+    maxStreak: int
+
+
+class UserGameHistoryResponse(BaseModel):
+    games: List[GameResultResponse]
+    total: int
+    page: int
+    per_page: int
 
 
 def load_word_lists():
@@ -281,7 +314,7 @@ async def register(request: RegisterRequest, db: DBSession = Depends(get_db)):
     return RegisterResponse(
         id=user.id,
         username=user.username,
-        created_at=user.created_at.isoformat()
+        created_at=safe_isoformat(user.created_at)
     )
 
 
@@ -345,6 +378,23 @@ async def logout(
     return LogoutResponse(message="Logout successful")
 
 
+@app.get("/auth/me", response_model=UserProfileResponse)
+async def get_current_user_profile(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get the current authenticated user's profile information.
+    
+    Requires valid session cookie.
+    Returns basic profile information: id, username, created_at.
+    """
+    return UserProfileResponse(
+        id=current_user.id,
+        username=current_user.username,
+        created_at=safe_isoformat(current_user.created_at)
+    )
+
+
 # ==================== Game Endpoints ====================
 
 @app.post("/games/submit", response_model=GameResultResponse, status_code=status.HTTP_201_CREATED)
@@ -370,7 +420,119 @@ async def submit_game_result(
         id=game_result.id,
         user_id=game_result.user_id,
         score=game_result.score,
-        played_at=game_result.played_at.isoformat()
+        played_at=safe_isoformat(game_result.played_at)
+    )
+
+
+@app.get("/stats/me", response_model=UserStatsResponse)
+async def get_user_stats(
+    current_user: User = Depends(get_current_user),
+    db: DBSession = Depends(get_db)
+):
+    """
+    Get statistics for the current authenticated user.
+    
+    Calculates and returns:
+    - played: Total games played
+    - won: Games won (score 1-6)
+    - lost: Games lost (score 0 or > 6)
+    - winRate: Percentage of games won (0-100)
+    - currentStreak: Current consecutive wins
+    - maxStreak: Maximum consecutive wins achieved
+    
+    Win/loss is determined by score:
+    - Score 1-6: Win (won in that many guesses)
+    - Score 0 or > 6: Loss
+    """
+    from sqlalchemy import func, and_
+    
+    # Get all game results for the user, ordered by played_at
+    games = db.query(GameResult).filter(
+        GameResult.user_id == current_user.id
+    ).order_by(GameResult.played_at.asc()).all()
+    
+    # Calculate statistics
+    played = len(games)
+    won = sum(1 for g in games if 1 <= g.score <= 6)
+    lost = played - won
+    win_rate = (won / played * 100) if played > 0 else 0.0
+    
+    # Calculate streaks
+    current_streak = 0
+    max_streak = 0
+    temp_streak = 0
+    
+    for game in games:
+        is_win = 1 <= game.score <= 6
+        if is_win:
+            temp_streak += 1
+            max_streak = max(max_streak, temp_streak)
+        else:
+            temp_streak = 0
+    
+    # Current streak is the streak at the end
+    current_streak = temp_streak
+    
+    return UserStatsResponse(
+        played=played,
+        won=won,
+        lost=lost,
+        winRate=round(win_rate, 2),
+        currentStreak=current_streak,
+        maxStreak=max_streak
+    )
+
+
+@app.get("/games/me", response_model=UserGameHistoryResponse)
+async def get_user_game_history(
+    current_user: User = Depends(get_current_user),
+    db: DBSession = Depends(get_db),
+    page: int = 1,
+    per_page: int = 20
+):
+    """
+    Get game history for the current authenticated user.
+    
+    Returns paginated list of all game results for the logged-in user.
+    Results are ordered by played_at (most recent first).
+    
+    Query parameters:
+    - page: Page number (default: 1)
+    - per_page: Results per page (default: 20, max: 100)
+    """
+    from sqlalchemy import func
+    
+    # Validate pagination parameters
+    page = max(1, page)
+    per_page = min(max(1, per_page), 100)
+    
+    # Get total count
+    total = db.query(func.count(GameResult.id)).filter(
+        GameResult.user_id == current_user.id
+    ).scalar()
+    
+    # Get paginated results
+    offset = (page - 1) * per_page
+    games = db.query(GameResult).filter(
+        GameResult.user_id == current_user.id
+    ).order_by(GameResult.played_at.desc()).limit(per_page).offset(offset).all()
+    
+    # Convert to response format
+    game_responses = [
+        GameResultResponse(
+            id=game.id,
+            user_id=game.user_id,
+            score=game.score,
+            played_at=safe_isoformat(game.played_at)
+        )
+        for game in games
+    ]
+    
+    return UserGameHistoryResponse(
+        games=game_responses,
+        total=total or 0,
+        page=page,
+        per_page=per_page
     )
 
 

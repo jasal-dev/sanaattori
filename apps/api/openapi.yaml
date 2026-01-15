@@ -1,0 +1,613 @@
+openapi: 3.0.0
+info:
+  title: Sanaattori API
+  version: 1.5.0
+  description: |
+    Backend API for the Sanaattori Finnish word games platform.
+    
+    ## Authentication
+    This API uses session-based authentication with HTTP-only cookies.
+    After logging in, the session cookie is automatically included in subsequent requests.
+    
+    When making requests from the frontend, use `credentials: 'include'` (fetch) or 
+    `withCredentials: true` (axios) to include cookies.
+    
+  contact:
+    name: Sanaattori Development Team
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: /api
+    description: Production server (behind reverse proxy)
+
+tags:
+  - name: health
+    description: Health check endpoints
+  - name: words
+    description: Word validation and retrieval
+  - name: authentication
+    description: User registration, login, and session management
+  - name: games
+    description: Game result submission and history
+  - name: leaderboards
+    description: Weekly and all-time leaderboards
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health check
+      description: Returns the health status of the API
+      operationId: healthCheck
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /validate-guess:
+    post:
+      tags:
+        - words
+      summary: Validate a Finnish word guess
+      description: |
+        Validates whether a word is in the allowed word list for the specified language and length.
+        Checks for correct length, allowed characters (a-z, ä, ö, å), and word existence.
+      operationId: validateGuess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - language
+                - wordLength
+                - guess
+              properties:
+                language:
+                  type: string
+                  description: Language code (currently only 'fi' is supported)
+                  example: fi
+                wordLength:
+                  type: integer
+                  description: Expected word length
+                  enum: [5, 6, 7]
+                  example: 5
+                guess:
+                  type: string
+                  description: The word to validate
+                  example: omena
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    description: Whether the guess is valid
+
+  /word:
+    get:
+      tags:
+        - words
+      summary: Get a random word
+      description: Returns a random solution word from the word list for the specified length
+      operationId: getWord
+      parameters:
+        - name: wordLength
+          in: query
+          description: Length of the word to retrieve
+          schema:
+            type: integer
+            default: 5
+            enum: [5, 6, 7]
+      responses:
+        '200':
+          description: Random word
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  word:
+                    type: string
+                    example: omena
+
+  /auth/register:
+    post:
+      tags:
+        - authentication
+      summary: Register a new user account
+      description: |
+        Creates a new user account with username and password.
+        Passwords are hashed using argon2id before storage.
+        Username must be unique (case-sensitive).
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                  description: Unique username
+                  example: player123
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 100
+                  description: User password
+                  example: securePassword123
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '409':
+          description: Username already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /auth/login:
+    post:
+      tags:
+        - authentication
+      summary: Authenticate user and create session
+      description: |
+        Authenticates user credentials and creates a session.
+        Sets an HTTP-only, secure session cookie that expires in 7 days.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: player123
+                password:
+                  type: string
+                  example: securePassword123
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              description: Session cookie
+              schema:
+                type: string
+                example: session_token=<token>; HttpOnly; Secure; SameSite=Lax; Max-Age=604800; Path=/
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Login successful
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      username:
+                        type: string
+                        example: player123
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags:
+        - authentication
+      summary: End current session
+      description: |
+        Deletes the current session from the database and clears the session cookie.
+      operationId: logout
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          headers:
+            Set-Cookie:
+              description: Cookie cleared
+              schema:
+                type: string
+                example: session_token=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logout successful
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags:
+        - authentication
+      summary: Get current user profile
+      description: Returns the authenticated user's basic profile information
+      operationId: getCurrentUser
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /games/submit:
+    post:
+      tags:
+        - games
+      summary: Submit a game result
+      description: |
+        Submits a game result for the authenticated user.
+        The played_at timestamp is automatically set to the current time.
+        Score must be a positive integer (typically 1-6 for wins, 0 or >6 for losses).
+      operationId: submitGameResult
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - score
+              properties:
+                score:
+                  type: integer
+                  minimum: 0
+                  description: Game score (1-6 for win, 0 or >6 for loss)
+                  example: 3
+      responses:
+        '201':
+          description: Game result created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /stats/me:
+    get:
+      tags:
+        - games
+      summary: Get user statistics
+      description: |
+        Returns statistics for the authenticated user, calculated from their game results.
+        
+        Win/loss determination:
+        - Score 1-6: Win (won in that many guesses)
+        - Score 0 or > 6: Loss
+      operationId: getUserStats
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: User statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /games/me:
+    get:
+      tags:
+        - games
+      summary: Get user game history
+      description: |
+        Returns paginated list of all game results for the authenticated user.
+        Results are ordered by played_at (most recent first).
+      operationId: getUserGameHistory
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: per_page
+          in: query
+          description: Results per page
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Game history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameHistory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /leaderboard/weekly:
+    get:
+      tags:
+        - leaderboards
+      summary: Get weekly leaderboard
+      description: |
+        Returns top players by total score in the last 7 days.
+        Players are ranked by total score, with ties broken by fewer games played.
+      operationId: getWeeklyLeaderboard
+      parameters:
+        - name: limit
+          in: query
+          description: Number of top players to return
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Weekly leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyLeaderboard'
+
+  /leaderboard/alltime:
+    get:
+      tags:
+        - leaderboards
+      summary: Get all-time leaderboard
+      description: |
+        Returns top players by total score of all time.
+        Players are ranked by total score, with ties broken by fewer games played.
+      operationId: getAllTimeLeaderboard
+      parameters:
+        - name: limit
+          in: query
+          description: Number of top players to return
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: All-time leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllTimeLeaderboard'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session_token
+      description: |
+        Session-based authentication using HTTP-only cookies.
+        The session cookie is set by the /auth/login endpoint and automatically 
+        included in subsequent requests by the browser.
+
+  schemas:
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: player123
+        created_at:
+          type: string
+          format: date-time
+          example: '2026-01-08T15:00:00Z'
+
+    GameResult:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        user_id:
+          type: integer
+          example: 1
+        score:
+          type: integer
+          example: 3
+        played_at:
+          type: string
+          format: date-time
+          example: '2026-01-13T15:30:00Z'
+
+    UserStats:
+      type: object
+      properties:
+        played:
+          type: integer
+          description: Total games played
+          example: 42
+        won:
+          type: integer
+          description: Games won (score 1-6)
+          example: 35
+        lost:
+          type: integer
+          description: Games lost (score 0 or >6)
+          example: 7
+        winRate:
+          type: number
+          format: float
+          description: Percentage of games won (0-100)
+          example: 83.33
+        currentStreak:
+          type: integer
+          description: Current consecutive wins
+          example: 5
+        maxStreak:
+          type: integer
+          description: Maximum consecutive wins achieved
+          example: 12
+
+    GameHistory:
+      type: object
+      properties:
+        games:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameResult'
+        total:
+          type: integer
+          description: Total number of games
+          example: 42
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        per_page:
+          type: integer
+          description: Results per page
+          example: 20
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: player123
+        total_score:
+          type: integer
+          example: 1500
+        games_played:
+          type: integer
+          example: 15
+
+    WeeklyLeaderboard:
+      type: object
+      properties:
+        period:
+          type: string
+          example: weekly
+        start_date:
+          type: string
+          format: date-time
+          example: '2026-01-06T00:00:00Z'
+        end_date:
+          type: string
+          format: date-time
+          example: '2026-01-13T15:30:00Z'
+        leaderboard:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardEntry'
+
+    AllTimeLeaderboard:
+      type: object
+      properties:
+        period:
+          type: string
+          example: all-time
+        leaderboard:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardEntry'
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: Not authenticated
+
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  oneOf:
+                    - type: string
+                    - type: integer
+                example: ['body', 'username']
+              msg:
+                type: string
+                example: field required
+              type:
+                type: string
+                example: value_error.missing
+
+  responses:
+    Unauthorized:
+      description: Not authenticated or session expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            detail: Not authenticated

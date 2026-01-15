@@ -7,6 +7,8 @@ import Toast from './components/Toast';
 import { GameProvider, useGame } from './context/GameContext';
 import { LocaleProvider } from './context/LocaleContext';
 import { IntlProvider } from './context/IntlProvider';
+import { AuthProvider } from './context/AuthContext';
+import { ModalProvider } from './context/ModalContext';
 
 function GameContent() {
   const { hardModeError, clearHardModeError } = useGame();
@@ -25,12 +27,16 @@ function GameContent() {
 
 export default function Home() {
   return (
-    <LocaleProvider>
-      <IntlProvider>
-        <GameProvider>
-          <GameContent />
-        </GameProvider>
-      </IntlProvider>
-    </LocaleProvider>
+    <AuthProvider>
+      <ModalProvider>
+        <LocaleProvider>
+          <IntlProvider>
+            <GameProvider>
+              <GameContent />
+            </GameProvider>
+          </IntlProvider>
+        </LocaleProvider>
+      </ModalProvider>
+    </AuthProvider>
   );
 }
