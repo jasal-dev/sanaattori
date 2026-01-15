@@ -251,13 +251,15 @@ class TestGameResults:
         )
         assert response.status_code == 422
     
-    def test_submit_zero_score_rejected(self, logged_in_client):
-        """Test that zero score is rejected."""
+    def test_submit_zero_score_accepted(self, logged_in_client):
+        """Test that zero score is accepted (represents a loss)."""
         response = logged_in_client.post(
             "/games/submit",
             json={"score": 0}
         )
-        assert response.status_code == 422
+        assert response.status_code == 201
+        data = response.json()
+        assert data["score"] == 0
 
 
 # ==================== Leaderboard Tests ====================

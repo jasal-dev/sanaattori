@@ -348,3 +348,26 @@ export async function getUserGameHistory(page: number = 1, perPage: number = 20)
   }
 }
 
+export async function submitGameResult(score: number): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/games/submit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Important: Include cookies
+      body: JSON.stringify({ score }),
+    });
+
+    if (!response.ok) {
+      // Not authenticated or error - fail silently and let localStorage handle it
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error submitting game result:', error);
+    return false;
+  }
+}
+

@@ -5,7 +5,7 @@ import { type GameState, type GameSettings, type Guess, type LetterState } from 
 import { evaluateGuess, updateRevealedLetters, getRandomSolution } from '../utils/evaluation';
 import { updateStatsAfterGame } from '../utils/stats';
 import { getHardModeConstraints, validateHardMode } from '../utils/hardMode';
-import { validateGuess as apiValidateGuess } from '../utils/api';
+import { validateGuess as apiValidateGuess, submitGameResult as apiSubmitGameResult } from '../utils/api';
 
 interface GameContextType {
   gameState: GameState;
@@ -253,6 +253,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     
     // Update stats if game ended
     if (won || lost) {
+      // Calculate score: number of guesses for win, 0 for loss
+      const score = won ? newGuesses.length : 0;
+      
+      // Submit to backend (will fail silently if not authenticated)
+      apiSubmitGameResult(score).catch(err => {
+        console.log('Failed to submit game result to backend:', err);
+      });
+      
+      // Also update localStorage stats for backward compatibility
       updateStatsAfterGame(won);
     }
     
