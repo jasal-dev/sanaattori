@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getStats, resetStats, getAllVariations, type GameStats, type GameVariation } from '../utils/stats';
-import { getUserStats, type UserStats } from '../utils/api';
+import { getUserStats } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useTranslations } from 'next-intl';
 import { useGame } from '../context/GameContext';
@@ -36,25 +36,7 @@ export default function StatsModal({ isOpen, onClose }: StatsModalProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      // Update selected variation when modal opens
-      setSelectedVariation({
-        wordLength: gameState.settings.wordLength,
-        hardMode: gameState.settings.hardMode,
-      });
-      loadStats();
-    }
-  }, [isOpen, gameState.settings.wordLength, gameState.settings.hardMode, isAuthenticated]);
-
-  // Reload stats when selected variation changes
-  useEffect(() => {
-    if (isOpen) {
-      loadStats();
-    }
-  }, [selectedVariation, isOpen]);
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     if (isAuthenticated) {
       // Fetch stats from backend
       setIsLoading(true);
@@ -84,7 +66,25 @@ export default function StatsModal({ isOpen, onClose }: StatsModalProps) {
       // Use localStorage stats
       setStats(getStats(selectedVariation));
     }
-  };
+  }, [isAuthenticated, selectedVariation]);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Update selected variation when modal opens
+      setSelectedVariation({
+        wordLength: gameState.settings.wordLength,
+        hardMode: gameState.settings.hardMode,
+      });
+      loadStats();
+    }
+  }, [isOpen, gameState.settings.wordLength, gameState.settings.hardMode, loadStats]);
+
+  // Reload stats when selected variation changes
+  useEffect(() => {
+    if (isOpen) {
+      loadStats();
+    }
+  }, [selectedVariation, isOpen, loadStats]);
 
   if (!isOpen) return null;
 
