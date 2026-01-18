@@ -188,6 +188,7 @@ export interface UserStats {
   winRate: number;
   currentStreak: number;
   maxStreak: number;
+  guessDistribution: Record<number, number>;
 }
 
 export interface GameResult {
@@ -312,9 +313,26 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
   }
 }
 
-export async function getUserStats(): Promise<UserStats | null> {
+export async function getUserStats(
+  wordLength?: number,
+  hardMode?: boolean
+): Promise<UserStats | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/stats/me`, {
+    let url = `${API_BASE_URL}/stats/me`;
+    const params = new URLSearchParams();
+    
+    if (wordLength !== undefined) {
+      params.append('wordLength', wordLength.toString());
+    }
+    if (hardMode !== undefined) {
+      params.append('hardMode', hardMode.toString());
+    }
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    const response = await fetch(url, {
       method: 'GET',
       credentials: 'include', // Important: Include cookies
     });
@@ -348,7 +366,11 @@ export async function getUserGameHistory(page: number = 1, perPage: number = 20)
   }
 }
 
-export async function submitGameResult(score: number): Promise<boolean> {
+export async function submitGameResult(
+  score: number,
+  wordLength: number,
+  hardMode: boolean
+): Promise<boolean> {
   try {
     const response = await fetch(`${API_BASE_URL}/games/submit`, {
       method: 'POST',
@@ -356,7 +378,7 @@ export async function submitGameResult(score: number): Promise<boolean> {
         'Content-Type': 'application/json',
       },
       credentials: 'include', // Important: Include cookies
-      body: JSON.stringify({ score }),
+      body: JSON.stringify({ score, wordLength, hardMode }),
     });
 
     if (!response.ok) {

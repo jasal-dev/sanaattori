@@ -257,12 +257,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const score = won ? newGuesses.length : 0;
       
       // Submit to backend (will fail silently if not authenticated)
-      apiSubmitGameResult(score).catch(err => {
+      apiSubmitGameResult(score, settings.wordLength, settings.hardMode).catch(err => {
         console.log('Failed to submit game result to backend:', err);
       });
       
-      // Also update localStorage stats for backward compatibility
-      updateStatsAfterGame(won);
+      // Also update localStorage stats with variation tracking
+      const variation = {
+        wordLength: settings.wordLength,
+        hardMode: settings.hardMode,
+      };
+      updateStatsAfterGame(variation, won, won ? newGuesses.length : undefined);
     }
     
     setGameState(prev => ({
