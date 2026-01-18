@@ -67,7 +67,7 @@ function migrateOldStats(): void {
     };
 
     localStorage.setItem(STATS_KEY, JSON.stringify(migratedStats));
-    console.log('Migrated old statistics to new format');
+    // Migration successful - old stats preserved under 5-letter normal mode
   } catch (error) {
     console.error('Error migrating old stats:', error);
   }
