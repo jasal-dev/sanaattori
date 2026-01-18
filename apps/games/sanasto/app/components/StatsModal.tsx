@@ -68,23 +68,22 @@ export default function StatsModal({ isOpen, onClose }: StatsModalProps) {
     }
   }, [isAuthenticated, selectedVariation]);
 
+  // Update selected variation when modal opens or game settings change
   useEffect(() => {
     if (isOpen) {
-      // Update selected variation when modal opens
       setSelectedVariation({
         wordLength: gameState.settings.wordLength,
         hardMode: gameState.settings.hardMode,
       });
-      loadStats();
     }
-  }, [isOpen, gameState.settings.wordLength, gameState.settings.hardMode, loadStats]);
+  }, [isOpen, gameState.settings.wordLength, gameState.settings.hardMode]);
 
-  // Reload stats when selected variation changes
+  // Load stats when modal opens or selected variation changes
   useEffect(() => {
     if (isOpen) {
       loadStats();
     }
-  }, [selectedVariation, isOpen, loadStats]);
+  }, [isOpen, loadStats]);
 
   if (!isOpen) return null;
 
