@@ -1,5 +1,7 @@
 'use client';
 
+const MIN_BAR_WIDTH_PERCENT = 7; // Minimum width percentage for bars with values
+
 interface BarChartProps {
   data: Record<number, number>;
   maxAttempts?: number;
@@ -17,7 +19,7 @@ export default function BarChart({ data, maxAttempts = 6 }: BarChartProps) {
       {guessNumbers.map((guessNum) => {
         const count = data[guessNum] || 0;
         const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
-        const minWidth = count > 0 ? 7 : 0; // Minimum width for bars with values
+        const minWidth = count > 0 ? MIN_BAR_WIDTH_PERCENT : 0;
         const barWidth = Math.max(percentage, minWidth);
         
         return (

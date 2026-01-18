@@ -22,6 +22,7 @@ export interface VariationStats {
 }
 
 const STATS_KEY = 'sanaattori_stats_v2'; // Updated version for new format
+const OLD_STATS_KEY = 'sanaattori_stats_v1'; // Old version key for migration
 
 const DEFAULT_STATS: GameStats = {
   played: 0,
@@ -32,6 +33,46 @@ const DEFAULT_STATS: GameStats = {
   guessDistribution: {},
 };
 
+// Migrate old stats to new format if needed
+function migrateOldStats(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    // Check if migration has already been done
+    const newStats = localStorage.getItem(STATS_KEY);
+    if (newStats) {
+      return; // Already migrated or using new format
+    }
+
+    // Check for old stats
+    const oldStatsStr = localStorage.getItem(OLD_STATS_KEY);
+    if (!oldStatsStr) {
+      return; // No old stats to migrate
+    }
+
+    const oldStats = JSON.parse(oldStatsStr);
+    
+    // Migrate old stats to 5-letter normal mode (most common default)
+    const migratedStats: VariationStats = {
+      '5-normal': {
+        played: oldStats.played || 0,
+        won: oldStats.won || 0,
+        lost: oldStats.lost || 0,
+        currentStreak: oldStats.currentStreak || 0,
+        maxStreak: oldStats.maxStreak || 0,
+        guessDistribution: {}, // Can't migrate this as it wasn't tracked before
+      }
+    };
+
+    localStorage.setItem(STATS_KEY, JSON.stringify(migratedStats));
+    console.log('Migrated old statistics to new format');
+  } catch (error) {
+    console.error('Error migrating old stats:', error);
+  }
+}
+
 function getVariationKey(variation: GameVariation): string {
   return `${variation.wordLength}-${variation.hardMode ? 'hard' : 'normal'}`;
 }
@@ -40,6 +81,9 @@ function getAllVariationStats(): VariationStats {
   if (typeof window === 'undefined') {
     return {};
   }
+
+  // Run migration once on first access
+  migrateOldStats();
 
   try {
     const stored = localStorage.getItem(STATS_KEY);
