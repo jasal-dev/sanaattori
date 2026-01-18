@@ -32,7 +32,13 @@
     "resetStats": "Återställ statistik",
     "resetConfirm": "Är du säker? Detta kan inte ångras.",
     "resetYes": "Ja, återställ",
-    "resetCancel": "Avbryt"
+    "resetCancel": "Avbryt",
+    "guessDistribution": "Gissningsfördelning",
+    "variation": "Spelvariation",
+    "allVariations": "Alla variationer",
+    "normalMode": "Normal",
+    "hardMode": "Svår",
+    "letters": "{count} bokstäver"
   },
   "keyboard": {
     "enter": "ENTER",

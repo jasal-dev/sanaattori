@@ -32,7 +32,13 @@
     "resetStats": "Nollaa tilastot",
     "resetConfirm": "Oletko varma? Tätä ei voi perua.",
     "resetYes": "Kyllä, nollaa",
-    "resetCancel": "Peruuta"
+    "resetCancel": "Peruuta",
+    "guessDistribution": "Arvausten jakauma",
+    "variation": "Pelin muunnelma",
+    "allVariations": "Kaikki muunnelmat",
+    "normalMode": "Normaali",
+    "hardMode": "Vaikea",
+    "letters": "{count} kirjainta"
   },
   "keyboard": {
     "enter": "ENTER",

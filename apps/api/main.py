@@ -100,12 +100,16 @@ class LogoutResponse(BaseModel):
 
 class SubmitGameResultRequest(BaseModel):
     score: int = Field(..., ge=0)
+    wordLength: int = Field(default=5, ge=5, le=7)
+    hardMode: bool = Field(default=False)
 
 
 class GameResultResponse(BaseModel):
     id: int
     user_id: int
     score: int
+    word_length: int
+    hard_mode: bool
     played_at: str
 
 
@@ -141,6 +145,7 @@ class UserStatsResponse(BaseModel):
     winRate: float
     currentStreak: int
     maxStreak: int
+    guessDistribution: dict[int, int]
 
 
 class UserGameHistoryResponse(BaseModel):
@@ -407,10 +412,13 @@ async def submit_game_result(
     Submit a game result (requires authentication).
     
     The played_at timestamp is automatically set to the current time.
+    Tracks variation (word length and hard mode) for statistics.
     """
     game_result = GameResult(
         user_id=current_user.id,
-        score=request.score
+        score=request.score,
+        word_length=request.wordLength,
+        hard_mode=1 if request.hardMode else 0
     )
     db.add(game_result)
     db.commit()
@@ -420,6 +428,8 @@ async def submit_game_result(
         id=game_result.id,
         user_id=game_result.user_id,
         score=game_result.score,
+        word_length=game_result.word_length,
+        hard_mode=bool(game_result.hard_mode),
         played_at=safe_isoformat(game_result.played_at)
     )
 
@@ -427,10 +437,14 @@ async def submit_game_result(
 @app.get("/stats/me", response_model=UserStatsResponse)
 async def get_user_stats(
     current_user: User = Depends(get_current_user),
-    db: DBSession = Depends(get_db)
+    db: DBSession = Depends(get_db),
+    wordLength: Optional[int] = None,
+    hardMode: Optional[bool] = None
 ):
     """
     Get statistics for the current authenticated user.
+    
+    Optionally filter by game variation (word length and/or hard mode).
     
     Calculates and returns:
     - played: Total games played
@@ -439,6 +453,7 @@ async def get_user_stats(
     - winRate: Percentage of games won (0-100)
     - currentStreak: Current consecutive wins
     - maxStreak: Maximum consecutive wins achieved
+    - guessDistribution: Distribution of wins by number of guesses
     
     Win/loss is determined by score:
     - Score 1-6: Win (won in that many guesses)
@@ -446,16 +461,29 @@ async def get_user_stats(
     """
     from sqlalchemy import func, and_
     
+    # Build query with optional filters
+    query = db.query(GameResult).filter(GameResult.user_id == current_user.id)
+    
+    if wordLength is not None:
+        query = query.filter(GameResult.word_length == wordLength)
+    
+    if hardMode is not None:
+        query = query.filter(GameResult.hard_mode == (1 if hardMode else 0))
+    
     # Get all game results for the user, ordered by played_at
-    games = db.query(GameResult).filter(
-        GameResult.user_id == current_user.id
-    ).order_by(GameResult.played_at.asc()).all()
+    games = query.order_by(GameResult.played_at.asc()).all()
     
     # Calculate statistics
     played = len(games)
     won = sum(1 for g in games if 1 <= g.score <= 6)
     lost = played - won
     win_rate = (won / played * 100) if played > 0 else 0.0
+    
+    # Calculate guess distribution (only for wins)
+    guess_distribution: dict[int, int] = {}
+    for game in games:
+        if 1 <= game.score <= 6:
+            guess_distribution[game.score] = guess_distribution.get(game.score, 0) + 1
     
     # Calculate streaks
     current_streak = 0
@@ -479,7 +507,8 @@ async def get_user_stats(
         lost=lost,
         winRate=round(win_rate, 2),
         currentStreak=current_streak,
-        maxStreak=max_streak
+        maxStreak=max_streak,
+        guessDistribution=guess_distribution
     )
 
 
@@ -523,6 +552,8 @@ async def get_user_game_history(
             id=game.id,
             user_id=game.user_id,
             score=game.score,
+            word_length=game.word_length,
+            hard_mode=bool(game.hard_mode),
             played_at=safe_isoformat(game.played_at)
         )
         for game in games
