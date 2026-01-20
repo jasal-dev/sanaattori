@@ -32,7 +32,13 @@
     "resetStats": "Reset Statistics",
     "resetConfirm": "Are you sure? This cannot be undone.",
     "resetYes": "Yes, Reset",
-    "resetCancel": "Cancel"
+    "resetCancel": "Cancel",
+    "guessDistribution": "Guess Distribution",
+    "variation": "Game Variation",
+    "allVariations": "All Variations",
+    "normalMode": "Normal",
+    "hardMode": "Hard",
+    "letters": "{count} Letters"
   },
   "keyboard": {
     "enter": "ENTER",

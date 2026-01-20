@@ -32,7 +32,13 @@
     "resetStats": "Statistiken zurücksetzen",
     "resetConfirm": "Bist du sicher? Dies kann nicht rückgängig gemacht werden.",
     "resetYes": "Ja, zurücksetzen",
-    "resetCancel": "Abbrechen"
+    "resetCancel": "Abbrechen",
+    "guessDistribution": "Verteilung der Vermutungen",
+    "variation": "Spielvariation",
+    "allVariations": "Alle Variationen",
+    "normalMode": "Normal",
+    "hardMode": "Schwer",
+    "letters": "{count} Buchstaben"
   },
   "keyboard": {
     "enter": "ENTER",
